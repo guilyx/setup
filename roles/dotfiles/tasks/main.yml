@@ -1,0 +1,23 @@
+---
+- name: Skip dotfiles role when disabled
+  ansible.builtin.meta: end_role
+  when: not dotfiles.enabled | bool
+
+- name: Ensure GNU stow is installed
+  ansible.builtin.package:
+    name: stow
+    state: present
+
+- name: Clone dotfiles repository
+  become: false
+  ansible.builtin.git:
+    repo: "{{ dotfiles.repo_url }}"
+    dest: "{{ dotfiles.destination | expanduser }}"
+    update: true
+
+- name: Stow configured folders
+  become: false
+  ansible.builtin.command:
+    cmd: "stow -d {{ dotfiles.destination | expanduser }} -t {{ ansible_env.HOME }} {{ item }}"
+  loop: "{{ dotfiles.stow_folders }}"
+  changed_when: false

@@ -1,0 +1,55 @@
+---
+common:
+  timezone: "UTC"
+  locale: "en_US.UTF-8"
+  base_packages:
+    - curl
+    - git
+    - unzip
+    - ca-certificates
+
+dotfiles:
+  enabled: true
+  repo_url: "https://github.com/example/dotfiles.git"
+  destination: "~/.dotfiles"
+  stow_folders:
+    - shell
+    - git
+
+dev:
+  enabled: true
+  package_manager: "apt"
+  packages:
+    - build-essential
+    - make
+    - jq
+    - ripgrep
+    - fd-find
+  python:
+    enabled: true
+    packages:
+      - pipx
+      - virtualenv
+  node:
+    enabled: true
+    packages:
+      - nodejs
+      - npm
+
+vps:
+  enabled: true
+  create_deploy_user: true
+  deploy_user: "deploy"
+  disable_password_auth: true
+  ssh_port: 22
+  ufw:
+    enabled: true
+    allow:
+      - "OpenSSH"
+      - "80"
+      - "443"
+  reverse_proxy:
+    engine: "caddy"
+    domains:
+      - domain: "example.com"
+        upstream: "127.0.0.1:3000"

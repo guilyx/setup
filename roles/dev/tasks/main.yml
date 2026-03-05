@@ -1,0 +1,26 @@
+---
+- name: Skip dev role when disabled
+  ansible.builtin.meta: end_role
+  when: not dev.enabled | bool
+
+- name: Install dev packages
+  ansible.builtin.package:
+    name: "{{ dev.packages }}"
+    state: present
+  when: dev.packages | length > 0
+
+- name: Install Python tooling packages
+  ansible.builtin.package:
+    name: "{{ dev.python.packages }}"
+    state: present
+  when:
+    - dev.python.enabled | bool
+    - dev.python.packages | length > 0
+
+- name: Install Node tooling packages
+  ansible.builtin.package:
+    name: "{{ dev.node.packages }}"
+    state: present
+  when:
+    - dev.node.enabled | bool
+    - dev.node.packages | length > 0

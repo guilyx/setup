@@ -1,0 +1,11 @@
+---
+- name: Provision local development machine
+  hosts: localhost
+  connection: local
+  become: true
+  vars_files:
+    - ../config/defaults.yaml
+  roles:
+    - role: common
+    - role: dev
+    - role: dotfiles
