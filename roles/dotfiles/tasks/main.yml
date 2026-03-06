@@ -8,16 +8,67 @@
     name: stow
     state: present
 
-- name: Clone dotfiles repository
+- name: Resolve dotfiles source path
+  ansible.builtin.set_fact:
+    dotfiles_source_dir: >-
+      {{
+        (dotfiles.local_path | default('') | trim)
+        if (dotfiles.local_path | default('') | trim) != ''
+        else (dotfiles.destination | expanduser)
+      }}
+
+- name: Validate local dotfiles source path
+  ansible.builtin.stat:
+    path: "{{ dotfiles_source_dir | expanduser }}"
+  register: dotfiles_source_stat
+  when: (dotfiles.local_path | default('') | trim) != ''
+
+- name: Fail if local dotfiles source path is missing
+  ansible.builtin.fail:
+    msg: "Configured dotfiles.local_path does not exist: {{ dotfiles_source_dir }}"
+  when:
+    - (dotfiles.local_path | default('') | trim) != ''
+    - not dotfiles_source_stat.stat.exists
+
+- name: Clone dotfiles repository when local path is not provided
   become: false
   ansible.builtin.git:
     repo: "{{ dotfiles.repo_url }}"
     dest: "{{ dotfiles.destination | expanduser }}"
     update: true
+  when: (dotfiles.local_path | default('') | trim) == ''
 
-- name: Stow configured folders
+- name: Discover top-level dotfiles folders for stow
+  ansible.builtin.find:
+    paths: "{{ dotfiles_source_dir | expanduser }}"
+    file_type: directory
+    recurse: false
+  register: dotfiles_discovered_dirs
+  when: dotfiles.auto_discover_stow_folders | default(false) | bool
+
+- name: Resolve effective stow folders
+  ansible.builtin.set_fact:
+    dotfiles_effective_stow_folders: >-
+      {{
+        (
+          dotfiles_discovered_dirs.files
+          | map(attribute='path')
+          | map('basename')
+          | difference(dotfiles.exclude_stow_folders | default([]))
+          | sort
+        )
+        if (dotfiles.auto_discover_stow_folders | default(false) | bool)
+        else (dotfiles.stow_folders | default([]))
+      }}
+
+- name: Ensure effective stow folder list is not empty
+  ansible.builtin.fail:
+    msg: "No stow folders resolved. Check dotfiles source path and exclude list."
+  when: (dotfiles_effective_stow_folders | length) == 0
+
+- name: Stow effective folders
   become: false
   ansible.builtin.command:
-    cmd: "stow -d {{ dotfiles.destination | expanduser }} -t {{ ansible_env.HOME }} {{ item }}"
-  loop: "{{ dotfiles.stow_folders }}"
+    cmd: "stow -d {{ dotfiles_source_dir | expanduser }} -t {{ ansible_env.HOME }} {{ item }}"
+  loop: "{{ dotfiles_effective_stow_folders }}"
   changed_when: false

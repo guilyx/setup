@@ -24,3 +24,49 @@
   when:
     - dev.node.enabled | bool
     - dev.node.packages | length > 0
+
+- name: Install Git tooling packages
+  ansible.builtin.package:
+    name: "{{ dev.git.packages | default([]) }}"
+    state: present
+  when:
+    - dev.git is defined
+    - dev.git.enabled | bool
+    - dev.git.packages | length > 0
+
+- name: Install quality tooling packages
+  ansible.builtin.package:
+    name: "{{ dev.quality.packages | default([]) }}"
+    state: present
+  when:
+    - dev.quality is defined
+    - dev.quality.enabled | bool
+    - dev.quality.packages | length > 0
+
+- name: Install container tooling packages
+  ansible.builtin.package:
+    name: "{{ dev.containers.packages | default([]) }}"
+    state: present
+  when:
+    - dev.containers is defined
+    - dev.containers.enabled | bool
+    - dev.containers.packages | length > 0
+
+- name: Install desktop tooling packages (best effort)
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ dev.desktop.packages | default([]) }}"
+  register: desktop_pkg_install
+  failed_when: false
+  when:
+    - dev.desktop is defined
+    - dev.desktop.enabled | bool
+    - dev.desktop.packages | length > 0
+
+- name: Report unsupported desktop packages
+  ansible.builtin.debug:
+    msg: "Desktop package failed to install and may be unavailable on this distro: {{ item.item }}"
+  loop: "{{ desktop_pkg_install.results | default([]) }}"
+  when:
+    - item.failed | default(false)

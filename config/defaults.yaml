@@ -1,6 +1,6 @@
 ---
 common:
-  timezone: "UTC"
+  timezone: "Asia/Dubai"
   locale: "en_US.UTF-8"
   base_packages:
     - curl
@@ -10,11 +10,41 @@ common:
 
 dotfiles:
   enabled: true
-  repo_url: "https://github.com/example/dotfiles.git"
+  local_path: "/home/wardn/dev/made_after_dark/dotfiles"
+  repo_url: "https://github.com/guilyx/dotfiles.git"
   destination: "~/.dotfiles"
+  auto_discover_stow_folders: true
+  exclude_stow_folders:
+    - ".git"
+    - "ansible"
   stow_folders:
-    - shell
+    - zsh
+    - starship
+    - fzf
+    - fd
+    - ripgrep
+    - bat
+    - tmux
     - git
+    - quality
+    - pyright
+    - ruff
+    - black
+    - shellcheck
+    - shfmt
+    - yamllint
+    - ansible
+    - polybar
+    - picom
+    - rofi
+    - feh
+    - dunst
+    - waybar
+    - docker
+    - lazydocker
+    - k9s
+    - direnv
+    - gitleaks
 
 dev:
   enabled: true
@@ -25,16 +55,65 @@ dev:
     - jq
     - ripgrep
     - fd-find
+    - tmux
+    - fzf
+    - zoxide
+    - bat
+    - direnv
   python:
     enabled: true
     packages:
       - pipx
       - virtualenv
+      - pre-commit
   node:
     enabled: true
     packages:
       - nodejs
       - npm
+  shell:
+    enabled: true
+    user: ""
+    packages:
+      - zsh
+    oh_my_zsh:
+      enabled: true
+      repo_url: "https://github.com/ohmyzsh/ohmyzsh.git"
+      branch: "master"
+      plugins:
+        - git
+        - docker
+        - docker-compose
+        - npm
+        - python
+        - ubuntu
+      theme: "robbyrussell"
+  git:
+    enabled: true
+    packages:
+      - git-lfs
+      - gh
+  quality:
+    enabled: true
+    packages:
+      - shellcheck
+      - yamllint
+  containers:
+    enabled: true
+    packages:
+      - docker.io
+      - docker-compose-v2
+  desktop:
+    enabled: true
+    packages:
+      - polybar
+      - rofi
+      - picom
+      - feh
+      - dunst
+      - waybar
+  docs_and_reviews:
+    enabled: true
 
 vps:
   enabled: true
