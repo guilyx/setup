@@ -1,0 +1,31 @@
+---
+- name: Skip reverse proxy when VPS disabled
+  ansible.builtin.meta: end_role
+  when: not vps.enabled | bool
+
+- name: Skip reverse proxy when no domains configured
+  ansible.builtin.meta: end_role
+  when: vps.reverse_proxy.domains | length == 0
+
+- name: Install Caddy
+  ansible.builtin.package:
+    name: caddy
+    state: present
+  when: vps.reverse_proxy.engine == "caddy"
+
+- name: Render Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    owner: root
+    group: root
+    mode: "0644"
+  when: vps.reverse_proxy.engine == "caddy"
+  notify: Restart caddy
+
+- name: Ensure Caddy is enabled and running
+  ansible.builtin.service:
+    name: caddy
+    enabled: true
+    state: started
+  when: vps.reverse_proxy.engine == "caddy"

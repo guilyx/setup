@@ -1,0 +1,25 @@
+---
+- name: Configure timezone
+  community.general.timezone:
+    name: "{{ common.timezone }}"
+  when: common.timezone is defined
+
+- name: Ensure locale package exists
+  ansible.builtin.package:
+    name: locales
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Generate locale
+  community.general.locale_gen:
+    name: "{{ common.locale }}"
+    state: present
+  when:
+    - ansible_os_family == "Debian"
+    - common.locale is defined
+
+- name: Install common base packages
+  ansible.builtin.package:
+    name: "{{ common.base_packages }}"
+    state: present
+  when: common.base_packages | length > 0
