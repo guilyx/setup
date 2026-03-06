@@ -1,0 +1,6 @@
+{% for site in vps.reverse_proxy.domains %}
+{{ site.domain }} {
+  reverse_proxy {{ site.upstream }}
+}
+
+{% endfor %}

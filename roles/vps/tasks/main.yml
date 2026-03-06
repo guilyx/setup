@@ -1,0 +1,52 @@
+---
+- name: Skip VPS role when disabled
+  ansible.builtin.meta: end_role
+  when: not vps.enabled | bool
+
+- name: Ensure deploy group exists
+  ansible.builtin.group:
+    name: "{{ vps.deploy_user }}"
+    state: present
+  when: vps.create_deploy_user | bool
+
+- name: Ensure deploy user exists
+  ansible.builtin.user:
+    name: "{{ vps.deploy_user }}"
+    shell: /bin/bash
+    groups: sudo
+    append: true
+    create_home: true
+    state: present
+  when: vps.create_deploy_user | bool
+
+- name: Ensure SSH service listens on configured port
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?Port\\s+"
+    line: "Port {{ vps.ssh_port }}"
+    state: present
+    backup: true
+  notify: Restart ssh
+
+- name: Disable SSH password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^#?PasswordAuthentication\\s+"
+    line: "PasswordAuthentication no"
+    state: present
+    backup: true
+  when: vps.disable_password_auth | bool
+  notify: Restart ssh
+
+- name: Enable UFW firewall
+  community.general.ufw:
+    state: enabled
+    policy: deny
+  when: vps.ufw.enabled | bool
+
+- name: Allow configured UFW rules
+  community.general.ufw:
+    rule: allow
+    name: "{{ item }}"
+  loop: "{{ vps.ufw.allow }}"
+  when: vps.ufw.enabled | bool

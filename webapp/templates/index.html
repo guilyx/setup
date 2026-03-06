@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Setup Builder</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+      fieldset { margin-bottom: 1rem; }
+      label { display: block; margin: .4rem 0; }
+      input[type="text"], input[type="number"] { width: 100%; max-width: 600px; }
+      pre { background: #111; color: #ddd; padding: 1rem; overflow-x: auto; }
+      .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+      .row > div { flex: 1 1 300px; }
+      button { padding: .5rem .9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Setup Builder</h1>
+    <p>Generate a setup config and compose runnable provisioning commands.</p>
+
+    <form id="builder">
+      <fieldset>
+        <legend>Common</legend>
+        <label>Timezone <input name="timezone" type="text" value="UTC"></label>
+        <label>Locale <input name="locale" type="text" value="en_US.UTF-8"></label>
+        <label>Base packages (comma separated)
+          <input name="base_packages" type="text" value="curl,git,unzip,ca-certificates">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dotfiles</legend>
+        <label><input name="dotfiles_enabled" type="checkbox" checked> Enable dotfiles</label>
+        <label>Repo URL <input name="dotfiles_repo_url" type="text" value="https://github.com/example/dotfiles.git"></label>
+        <label>Destination <input name="dotfiles_destination" type="text" value="~/.dotfiles"></label>
+        <label>Stow folders <input name="stow_folders" type="text" value="shell,git"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dev</legend>
+        <label>Dev packages <input name="dev_packages" type="text" value="build-essential,make,jq,ripgrep,fd-find"></label>
+        <label><input name="dev_python_enabled" type="checkbox" checked> Python toolchain</label>
+        <label>Python packages <input name="dev_python_packages" type="text" value="pipx,virtualenv"></label>
+        <label><input name="dev_node_enabled" type="checkbox" checked> Node toolchain</label>
+        <label>Node packages <input name="dev_node_packages" type="text" value="nodejs,npm"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>VPS</legend>
+        <label><input name="vps_create_deploy_user" type="checkbox" checked> Create deploy user</label>
+        <label>Deploy user <input name="vps_deploy_user" type="text" value="deploy"></label>
+        <label><input name="vps_disable_password_auth" type="checkbox" checked> Disable password auth</label>
+        <label>SSH port <input name="vps_ssh_port" type="number" value="22"></label>
+        <label><input name="vps_ufw_enabled" type="checkbox" checked> Enable UFW</label>
+        <label>UFW allow list <input name="vps_ufw_allow" type="text" value="OpenSSH,80,443"></label>
+        <label>Domain <input name="vps_domain" type="text" value="example.com"></label>
+        <label>Upstream <input name="vps_upstream" type="text" value="127.0.0.1:3000"></label>
+      </fieldset>
+
+      <button type="submit">Generate Commands</button>
+      <button id="run-dev" type="button">Run Dev Setup</button>
+    </form>
+
+    <h2>Generated</h2>
+    <pre id="output">No config generated yet.</pre>
+
+    <script>
+      const form = document.getElementById("builder");
+      const output = document.getElementById("output");
+      const runDevButton = document.getElementById("run-dev");
+
+      function serializeForm(formEl) {
+        const data = new FormData();
+        for (const element of formEl.elements) {
+          if (!element.name) continue;
+          if (element.type === "checkbox") {
+            data.append(element.name, element.checked ? "true" : "false");
+            continue;
+          }
+          data.append(element.name, element.value);
+        }
+        return data;
+      }
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const response = await fetch("/generate", { method: "POST", body: serializeForm(form) });
+        const payload = await response.json();
+        output.textContent = JSON.stringify(payload, null, 2);
+      });
+
+      runDevButton.addEventListener("click", async () => {
+        const response = await fetch("/run-dev", { method: "POST" });
+        const payload = await response.json();
+        output.textContent = JSON.stringify(payload, null, 2);
+      });
+    </script>
+  </body>
+</html>

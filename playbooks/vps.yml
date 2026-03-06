@@ -1,0 +1,14 @@
+---
+- name: Provision VPS hosts
+  hosts: vps
+  become: true
+  vars_files:
+    - ../config/defaults.yaml
+  pre_tasks:
+    - name: Ensure Python is installed (Debian/Ubuntu bootstrap)
+      ansible.builtin.raw: test -e /usr/bin/python3 || (apt-get update && apt-get install -y python3)
+      changed_when: false
+  roles:
+    - role: common
+    - role: vps
+    - role: reverse_proxy

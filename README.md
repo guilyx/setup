@@ -9,6 +9,19 @@ This project uses Ansible for idempotent provisioning, with:
 - environment-specific YAML config
 - a small web app to quickly compose setup configs and launch commands
 
+## Developer tooling included
+
+- Shell: `zsh` + `oh-my-zsh` (no Vim setup included)
+- Productivity: `tmux`, `fzf`, `zoxide`, `bat`, `direnv`
+- Git/Collaboration: `gh`, `git-lfs`, PR template, CODEOWNERS
+- Quality: `pre-commit`, `shellcheck`, `yamllint`
+- Containers: `docker.io`, `docker-compose-v2`
+- Desktop bars/launchers: `polybar`, `rofi`, `picom`, `feh`, `dunst`, `waybar` (best-effort)
+
+See `docs/dev-tooling-catalog.md` and `docs/review-policy.md`.
+
+Dotfiles support auto-discovery of stow folders from the source repo root (with configurable excludes).
+
 ## Documentation
 
 - Full docs index: `docs/README.md`

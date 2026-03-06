@@ -1,0 +1,49 @@
+---
+- name: Skip dev_shell role when disabled
+  ansible.builtin.meta: end_role
+  when:
+    - dev.shell is not defined or not dev.shell.enabled | bool
+
+- name: Install shell packages
+  ansible.builtin.package:
+    name: "{{ dev.shell.packages }}"
+    state: present
+  when: dev.shell.packages | length > 0
+
+- name: Resolve shell target user
+  ansible.builtin.set_fact:
+    dev_shell_target_user: >-
+      {{
+        dev.shell.user
+        if (dev.shell.user | default('') | trim) != ''
+        else (lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true))
+      }}
+
+- name: Ensure shell target user exists
+  ansible.builtin.command:
+    cmd: "id {{ dev_shell_target_user }}"
+  changed_when: false
+
+- name: Ensure default shell is zsh for target user
+  ansible.builtin.user:
+    name: "{{ dev_shell_target_user }}"
+    shell: /usr/bin/zsh
+
+- name: Clone Oh My Zsh
+  become: true
+  become_user: "{{ dev_shell_target_user }}"
+  ansible.builtin.git:
+    repo: "{{ dev.shell.oh_my_zsh.repo_url }}"
+    dest: "~/.oh-my-zsh"
+    version: "{{ dev.shell.oh_my_zsh.branch }}"
+    update: true
+  when:
+    - dev.shell.oh_my_zsh.enabled | bool
+
+- name: Render zsh configuration
+  become: true
+  become_user: "{{ dev_shell_target_user }}"
+  ansible.builtin.template:
+    src: zshrc.j2
+    dest: "~/.zshrc"
+    mode: "0644"
