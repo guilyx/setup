@@ -1,2 +1,17 @@
+[project]
+name = "setup-orchestrator"
+version = "0.1.0"
+description = "Configurable dev and VPS setup orchestration"
+requires-python = ">=3.11"
+dependencies = [
+  "Flask",
+  "PyYAML",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

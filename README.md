@@ -82,7 +82,7 @@ cp inventory/vps.example.ini inventory/vps.ini
 Run:
 
 ```bash
-python -m webapp.app
+uv run python -m webapp.app
 ```
 
 Then open `http://127.0.0.1:8080`.
@@ -91,12 +91,13 @@ The UI:
 - generates `config/web-generated.yaml`
 - displays the exact command that will be run
 - allows running `dev` setup locally
-- provides `vps` command preview for safe copy/paste execution
+- provides `vps` command and `--check` preview for safe copy/paste execution
+- supports deploy-user SSH key input (one public key per line) for VPS bootstrap
 
 ## Testing
 
 ```bash
-pytest
+uv run pytest
 ```
 
 ## Security notes

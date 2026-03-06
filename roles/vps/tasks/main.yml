@@ -19,6 +19,16 @@
     state: present
   when: vps.create_deploy_user | bool
 
+- name: Install authorized SSH keys for deploy user
+  ansible.posix.authorized_key:
+    user: "{{ vps.deploy_user }}"
+    key: "{{ item }}"
+    state: present
+  loop: "{{ vps.ssh_authorized_keys | default([]) }}"
+  when:
+    - vps.create_deploy_user | bool
+    - (vps.ssh_authorized_keys | default([]) | length) > 0
+
 - name: Ensure SSH service listens on configured port
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
