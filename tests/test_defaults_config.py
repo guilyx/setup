@@ -28,3 +28,9 @@ def test_shell_is_oh_my_zsh_only() -> None:
     configured_packages = set(cfg["dev"]["packages"])
     assert "nvim" not in configured_packages
     assert "vim" not in configured_packages
+
+
+def test_vps_defaults_include_ssh_authorized_keys_list() -> None:
+    cfg = load_defaults()
+    assert "ssh_authorized_keys" in cfg["vps"]
+    assert isinstance(cfg["vps"]["ssh_authorized_keys"], list)
