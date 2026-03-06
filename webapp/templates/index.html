@@ -3,67 +3,242 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Setup Builder</title>
+    <title>Setup Control Plane</title>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
-      fieldset { margin-bottom: 1rem; }
-      label { display: block; margin: .4rem 0; }
-      input[type="text"], input[type="number"] { width: 100%; max-width: 600px; }
-      pre { background: #111; color: #ddd; padding: 1rem; overflow-x: auto; }
-      .row { display: flex; gap: 1rem; flex-wrap: wrap; }
-      .row > div { flex: 1 1 300px; }
-      button { padding: .5rem .9rem; }
+      :root {
+        --bg: #06070d;
+        --panel: #0b1020;
+        --panel-2: #0f1630;
+        --fg: #d3faff;
+        --muted: #83b8c9;
+        --line: #1f3557;
+        --neon-a: #00ffc8;
+        --neon-b: #7a5cff;
+        --neon-c: #12a2ff;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        color: var(--fg);
+        font-family: "Inter", "SF Pro Display", "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 10% 5%, rgba(18,162,255,0.25), transparent 35%),
+          radial-gradient(circle at 85% 10%, rgba(122,92,255,0.2), transparent 30%),
+          linear-gradient(180deg, #05060b, #06070d 30%, #03040a);
+      }
+      .scanline::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.02) 0,
+          rgba(255,255,255,0.02) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+        opacity: 0.3;
+      }
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 2rem 1rem 3rem;
+      }
+      .hero {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1.2rem;
+        background: linear-gradient(135deg, rgba(0,255,200,0.08), rgba(122,92,255,0.08));
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.02) inset;
+      }
+      h1 {
+        margin: 0;
+        letter-spacing: 0.06em;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .sub {
+        color: var(--muted);
+        margin-top: 0.4rem;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 1.7fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      @media (max-width: 980px) {
+        .layout { grid-template-columns: 1fr; }
+      }
+      .card {
+        background: linear-gradient(180deg, rgba(15,22,48,0.92), rgba(8,11,24,0.95));
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 1rem;
+      }
+      fieldset {
+        margin: 0 0 0.8rem;
+        border: 1px solid #223f65;
+        border-radius: 10px;
+        padding: 0.7rem;
+      }
+      legend {
+        color: var(--neon-a);
+        font-size: 0.88rem;
+        letter-spacing: 0.06em;
+        padding: 0 0.35rem;
+      }
+      label {
+        display: block;
+        margin: 0.45rem 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      input[type="text"], input[type="number"], textarea {
+        width: 100%;
+        margin-top: 0.2rem;
+        padding: 0.52rem 0.62rem;
+        border-radius: 8px;
+        border: 1px solid #335888;
+        background: rgba(7, 10, 22, 0.95);
+        color: var(--fg);
+      }
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+      .stack {
+        display: grid;
+        gap: 0.7rem;
+      }
+      .btn-row {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-top: 0.7rem;
+      }
+      button {
+        border: 1px solid #2a5e92;
+        color: var(--fg);
+        background: linear-gradient(120deg, rgba(0,255,200,0.14), rgba(18,162,255,0.2));
+        border-radius: 9px;
+        padding: 0.55rem 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: linear-gradient(120deg, rgba(122,92,255,0.16), rgba(18,162,255,0.12));
+      }
+      .hint, .help-list {
+        color: var(--muted);
+        font-size: 0.88rem;
+      }
+      .help-list {
+        margin: 0.2rem 0 0;
+        padding-left: 1.1rem;
+      }
+      pre {
+        background: #040713;
+        border: 1px solid #22466f;
+        border-radius: 10px;
+        padding: 0.8rem;
+        overflow-x: auto;
+        color: #aef7ff;
+        min-height: 200px;
+      }
+      .matrix {
+        color: #94ffd8;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.82rem;
+      }
     </style>
   </head>
-  <body>
-    <h1>Setup Builder</h1>
-    <p>Generate a setup config and compose runnable provisioning commands.</p>
+  <body class="scanline">
+    <div class="wrap">
+      <section class="hero">
+        <h1>Setup Control Plane</h1>
+        <div class="sub">Modern bootstrap for local dev and VPS hardening with generated, auditable commands.</div>
+      </section>
 
-    <form id="builder">
-      <fieldset>
-        <legend>Common</legend>
-        <label>Timezone <input name="timezone" type="text" value="UTC"></label>
-        <label>Locale <input name="locale" type="text" value="en_US.UTF-8"></label>
-        <label>Base packages (comma separated)
-          <input name="base_packages" type="text" value="curl,git,unzip,ca-certificates">
-        </label>
-      </fieldset>
+      <div class="layout">
+        <section class="card">
+          <form id="builder" class="stack">
+            <fieldset>
+              <legend>Common</legend>
+              <label>Timezone <input name="timezone" type="text" value="Asia/Dubai"></label>
+              <label>Locale <input name="locale" type="text" value="en_US.UTF-8"></label>
+              <label>Base packages (comma separated)
+                <input name="base_packages" type="text" value="curl,git,unzip,ca-certificates">
+              </label>
+            </fieldset>
 
-      <fieldset>
-        <legend>Dotfiles</legend>
-        <label><input name="dotfiles_enabled" type="checkbox" checked> Enable dotfiles</label>
-        <label>Repo URL <input name="dotfiles_repo_url" type="text" value="https://github.com/example/dotfiles.git"></label>
-        <label>Destination <input name="dotfiles_destination" type="text" value="~/.dotfiles"></label>
-        <label>Stow folders <input name="stow_folders" type="text" value="shell,git"></label>
-      </fieldset>
+            <fieldset>
+              <legend>Dotfiles</legend>
+              <label><input name="dotfiles_enabled" type="checkbox" checked> Enable dotfiles</label>
+              <label>Local path <input name="dotfiles_local_path" type="text" value="/home/wardn/dev/made_after_dark/dotfiles"></label>
+              <label>Repo URL fallback <input name="dotfiles_repo_url" type="text" value="https://github.com/guilyx/dotfiles.git"></label>
+              <label>Destination <input name="dotfiles_destination" type="text" value="~/.dotfiles"></label>
+              <label><input name="dotfiles_auto_discover_stow_folders" type="checkbox" checked> Auto-discover stow folders</label>
+              <label>Exclude folders (comma separated)
+                <input name="dotfiles_exclude_stow_folders" type="text" value=".git,ansible">
+              </label>
+              <label>Manual stow folders (used only if auto-discovery is off)
+                <input name="stow_folders" type="text" value="">
+              </label>
+            </fieldset>
 
-      <fieldset>
-        <legend>Dev</legend>
-        <label>Dev packages <input name="dev_packages" type="text" value="build-essential,make,jq,ripgrep,fd-find"></label>
-        <label><input name="dev_python_enabled" type="checkbox" checked> Python toolchain</label>
-        <label>Python packages <input name="dev_python_packages" type="text" value="pipx,virtualenv"></label>
-        <label><input name="dev_node_enabled" type="checkbox" checked> Node toolchain</label>
-        <label>Node packages <input name="dev_node_packages" type="text" value="nodejs,npm"></label>
-      </fieldset>
+            <fieldset>
+              <legend>Dev Machine</legend>
+              <label>Dev packages
+                <input name="dev_packages" type="text" value="build-essential,make,jq,ripgrep,fd-find,tmux,fzf,zoxide,bat,direnv">
+              </label>
+              <label><input name="dev_python_enabled" type="checkbox" checked> Python toolchain</label>
+              <label>Python packages <input name="dev_python_packages" type="text" value="pipx,virtualenv,pre-commit"></label>
+              <label><input name="dev_node_enabled" type="checkbox" checked> Node toolchain</label>
+              <label>Node packages <input name="dev_node_packages" type="text" value="nodejs,npm"></label>
+            </fieldset>
 
-      <fieldset>
-        <legend>VPS</legend>
-        <label><input name="vps_create_deploy_user" type="checkbox" checked> Create deploy user</label>
-        <label>Deploy user <input name="vps_deploy_user" type="text" value="deploy"></label>
-        <label><input name="vps_disable_password_auth" type="checkbox" checked> Disable password auth</label>
-        <label>SSH port <input name="vps_ssh_port" type="number" value="22"></label>
-        <label><input name="vps_ufw_enabled" type="checkbox" checked> Enable UFW</label>
-        <label>UFW allow list <input name="vps_ufw_allow" type="text" value="OpenSSH,80,443"></label>
-        <label>Domain <input name="vps_domain" type="text" value="example.com"></label>
-        <label>Upstream <input name="vps_upstream" type="text" value="127.0.0.1:3000"></label>
-      </fieldset>
+            <fieldset>
+              <legend>VPS Bootstrap</legend>
+              <label>Inventory file (relative or absolute path)
+                <input name="vps_inventory" type="text" value="inventory/vps.ini">
+              </label>
+              <label><input name="vps_create_deploy_user" type="checkbox" checked> Create deploy user</label>
+              <label>Deploy user <input name="vps_deploy_user" type="text" value="deploy"></label>
+              <label><input name="vps_disable_password_auth" type="checkbox" checked> Disable password auth</label>
+              <label>SSH port <input name="vps_ssh_port" type="number" value="22"></label>
+              <label>Deploy user SSH public keys (one per line)
+                <textarea name="vps_ssh_authorized_keys" placeholder="ssh-ed25519 AAAA... you@laptop"></textarea>
+              </label>
+              <label><input name="vps_ufw_enabled" type="checkbox" checked> Enable UFW</label>
+              <label>UFW allow list <input name="vps_ufw_allow" type="text" value="OpenSSH,80,443"></label>
+              <label>Domain <input name="vps_domain" type="text" value="example.com"></label>
+              <label>Upstream <input name="vps_upstream" type="text" value="127.0.0.1:3000"></label>
+            </fieldset>
 
-      <button type="submit">Generate Commands</button>
-      <button id="run-dev" type="button">Run Dev Setup</button>
-    </form>
+            <div class="btn-row">
+              <button type="submit">Generate Commands</button>
+              <button class="secondary" id="run-dev" type="button">Run Local Dev Setup</button>
+            </div>
+          </form>
+        </section>
 
-    <h2>Generated</h2>
-    <pre id="output">No config generated yet.</pre>
+        <section class="card">
+          <h3>Operator Output</h3>
+          <pre id="output" class="matrix">No config generated yet.</pre>
+          <p class="hint">`run-dev` executes locally. For VPS, copy the generated command and run it in terminal after confirming inventory + SSH reachability.</p>
+
+          <h3>How To Use</h3>
+          <ul class="help-list">
+            <li>Local laptop: fill Dev + Dotfiles, click Generate, then Run Local Dev Setup.</li>
+            <li>VPS: set inventory path, deploy user, SSH keys, and domain/upstream; then run generated VPS command.</li>
+            <li>SSH keys: paste one public key per line in the VPS section. Keys are installed for the deploy user.</li>
+            <li>Safer rollout: run generated `vps_check_command` first, then apply.</li>
+          </ul>
+        </section>
+      </div>
+    </div>
 
     <script>
       const form = document.getElementById("builder");
@@ -87,7 +262,26 @@
         event.preventDefault();
         const response = await fetch("/generate", { method: "POST", body: serializeForm(form) });
         const payload = await response.json();
-        output.textContent = JSON.stringify(payload, null, 2);
+        if (!response.ok) {
+          output.textContent = JSON.stringify(payload, null, 2);
+          return;
+        }
+        output.textContent = [
+          "config_path:",
+          payload.config_path,
+          "",
+          "inventory_path:",
+          payload.inventory_path,
+          "",
+          "dev_command:",
+          payload.dev_command,
+          "",
+          "vps_check_command:",
+          payload.vps_check_command,
+          "",
+          "vps_command:",
+          payload.vps_command,
+        ].join("\n");
       });
 
       runDevButton.addEventListener("click", async () => {
