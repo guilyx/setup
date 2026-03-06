@@ -3,12 +3,13 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-python3 -m venv "${ROOT_DIR}/.venv"
-source "${ROOT_DIR}/.venv/bin/activate"
+if ! command -v uv >/dev/null 2>&1; then
+  echo "uv is required. Install it from https://docs.astral.sh/uv/getting-started/installation/"
+  exit 1
+fi
 
-python -m pip install --upgrade pip
-python -m pip install -r "${ROOT_DIR}/webapp/requirements.txt"
-python -m pip install pytest
+cd "${ROOT_DIR}"
+uv sync --extra dev
 
 ansible-galaxy collection install -r "${ROOT_DIR}/requirements.yml"
 

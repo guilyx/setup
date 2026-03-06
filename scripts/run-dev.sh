@@ -2,6 +2,6 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-source "${ROOT_DIR}/.venv/bin/activate"
 
-python -m tooling.setup_cli dev "$@"
+cd "${ROOT_DIR}"
+uv run python -m tooling.setup_cli dev "$@"
