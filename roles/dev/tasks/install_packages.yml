@@ -1,0 +1,31 @@
+---
+# Installs a package group, tolerating names that do not exist on this Ubuntu
+# release. A single bulk transaction is attempted first; only if that fails do
+# we fall back to installing one package at a time so the rest of the group
+# still lands.
+- name: "Install {{ pkg_group_name }} packages"
+  ansible.builtin.package:
+    name: "{{ pkg_list }}"
+    state: present
+  register: pkg_bulk_result
+  ignore_errors: true
+  when: pkg_list | length > 0
+
+- name: "Install {{ pkg_group_name }} packages individually"
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ pkg_list }}"
+  register: pkg_individual_result
+  ignore_errors: true
+  when:
+    - pkg_list | length > 0
+    - pkg_bulk_result is failed
+
+- name: "Report unavailable {{ pkg_group_name }} packages"
+  ansible.builtin.debug:
+    msg: "Not available on this release, skipped: {{ item.item }}"
+  loop: "{{ pkg_individual_result.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item is failed

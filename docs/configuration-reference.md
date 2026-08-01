@@ -16,6 +16,7 @@ Recommended approach:
 ```yaml
 common:
 dotfiles:
+chezmoi:
 dev:
 vps:
 ```
@@ -32,10 +33,41 @@ vps:
 
 | Key | Type | Example | Purpose |
 |---|---|---|---|
-| `enabled` | bool | `true` | toggle dotfiles role |
-| `repo_url` | string | `https://github.com/me/dotfiles.git` | source repository |
-| `destination` | string | `~/.dotfiles` | checkout directory |
+| `enabled` | bool | `true` | toggle dotfiles handling |
+| `manager` | string | `chezmoi` | `chezmoi` or `stow`; selects which role owns `$HOME` |
+| `repo_url` | string | `https://github.com/me/dotfiles.git` | stow source repository |
+| `destination` | string | `~/.dotfiles` | stow checkout directory |
+| `local_path` | string | `""` | use an existing local stow tree instead of cloning |
 | `stow_folders` | list[string] | `["shell","git"]` | packages to stow |
+
+The `chezmoi` and `stow` roles are mutually exclusive. Whichever `manager`
+names is the one that runs; the other ends itself immediately.
+
+## `chezmoi`
+
+| Key | Type | Example | Purpose |
+|---|---|---|---|
+| `enabled` | bool | `true` | toggle chezmoi role |
+| `user` | string | `""` | target user; blank uses the playbook-resolved user |
+| `repo_url` | string | `https://github.com/guilyx/chezmoi.git` | dotfiles source |
+| `install_dir` | string | `/usr/local/bin` | where the binary lands |
+| `apply` | bool | `true` | apply immediately on first init |
+| `update` | bool | `true` | pull and apply on subsequent runs |
+| `data` | map | see below | template values written to `~/.config/chezmoi/chezmoi.toml` |
+
+```yaml
+chezmoi:
+  data:
+    name: "Ada Lovelace"
+    email: "ada@example.com"
+    editor: "nvim"
+    signing_key: ""
+    work_machine: false
+```
+
+Keys under `data` become chezmoi template variables (`{{ .name }}`). Every
+prompt in the dotfiles repo's `.chezmoi.toml.tmpl` needs a matching key here,
+or provisioning stops to ask. See [Dotfiles with chezmoi](./chezmoi-guide.md).
 
 ## `dev`
 
@@ -48,6 +80,18 @@ vps:
 | `python.packages` | list[string] | `["pipx","virtualenv"]` | Python packages |
 | `node.enabled` | bool | `true` | toggle Node toolchain |
 | `node.packages` | list[string] | `["nodejs","npm"]` | Node packages |
+| `rust.enabled` | bool | `true` | install Rust via rustup as the target user |
+| `rust.channel` | string | `stable` | rustup default toolchain |
+| `rust.components` | list[string] | `["rustfmt","clippy"]` | rustup components |
+| `go.enabled` | bool | `false` | toggle Go toolchain |
+| `shell.starship.enabled` | bool | `true` | install the starship prompt |
+| `shell.oh_my_zsh.custom_plugins` | list[object] | see defaults | extra plugins cloned into `custom/plugins` |
+| `git.configure_global` | bool | `true` | write global git settings for the target user |
+| `git.user_name` / `git.user_email` | string | `""` | identity; skipped when blank |
+| `editor.enabled` | bool | `true` | install the editor |
+| `editor.default` | string | `nvim` | exported as `$EDITOR` |
+| `containers.add_user_to_docker_group` | bool | `true` | docker without sudo |
+| `desktop.enabled` | bool | `false` | bars and launchers; off for headless boxes |
 
 ## `vps`
 

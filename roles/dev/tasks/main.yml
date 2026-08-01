@@ -3,70 +3,121 @@
   ansible.builtin.meta: end_role
   when: not dev.enabled | bool
 
-- name: Install dev packages
-  ansible.builtin.package:
-    name: "{{ dev.packages }}"
-    state: present
-  when: dev.packages | length > 0
+- name: Install core dev packages
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: core dev
+    pkg_list: "{{ dev.packages | default([]) }}"
 
 - name: Install Python tooling packages
-  ansible.builtin.package:
-    name: "{{ dev.python.packages }}"
-    state: present
-  when:
-    - dev.python.enabled | bool
-    - dev.python.packages | length > 0
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: Python tooling
+    pkg_list: "{{ dev.python.packages | default([]) }}"
+  when: dev.python.enabled | default(false) | bool
 
 - name: Install Node tooling packages
-  ansible.builtin.package:
-    name: "{{ dev.node.packages }}"
-    state: present
-  when:
-    - dev.node.enabled | bool
-    - dev.node.packages | length > 0
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: Node tooling
+    pkg_list: "{{ dev.node.packages | default([]) }}"
+  when: dev.node.enabled | default(false) | bool
+
+- name: Install Go tooling packages
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: Go tooling
+    pkg_list: "{{ dev.go.packages | default([]) }}"
+  when: dev.go.enabled | default(false) | bool
 
 - name: Install Git tooling packages
-  ansible.builtin.package:
-    name: "{{ dev.git.packages | default([]) }}"
-    state: present
-  when:
-    - dev.git is defined
-    - dev.git.enabled | bool
-    - dev.git.packages | length > 0
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: Git tooling
+    pkg_list: "{{ dev.git.packages | default([]) }}"
+  when: dev.git.enabled | default(false) | bool
+
+- name: Install editor packages
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: editor
+    pkg_list: "{{ dev.editor.packages | default([]) }}"
+  when: dev.editor.enabled | default(false) | bool
 
 - name: Install quality tooling packages
-  ansible.builtin.package:
-    name: "{{ dev.quality.packages | default([]) }}"
-    state: present
-  when:
-    - dev.quality is defined
-    - dev.quality.enabled | bool
-    - dev.quality.packages | length > 0
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: quality tooling
+    pkg_list: "{{ dev.quality.packages | default([]) }}"
+  when: dev.quality.enabled | default(false) | bool
 
 - name: Install container tooling packages
-  ansible.builtin.package:
-    name: "{{ dev.containers.packages | default([]) }}"
-    state: present
-  when:
-    - dev.containers is defined
-    - dev.containers.enabled | bool
-    - dev.containers.packages | length > 0
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: container tooling
+    pkg_list: "{{ dev.containers.packages | default([]) }}"
+  when: dev.containers.enabled | default(false) | bool
 
-- name: Install desktop tooling packages (best effort)
-  ansible.builtin.package:
-    name: "{{ item }}"
-    state: present
-  loop: "{{ dev.desktop.packages | default([]) }}"
-  register: desktop_pkg_install
+- name: Install desktop packages
+  ansible.builtin.include_tasks: install_packages.yml
+  vars:
+    pkg_group_name: desktop
+    pkg_list: "{{ dev.desktop.packages | default([]) }}"
+  when: dev.desktop.enabled | default(false) | bool
+
+- name: Configure Rust toolchain
+  ansible.builtin.include_tasks: rust.yml
+  when: dev.rust.enabled | default(false) | bool
+
+- name: Configure Git for the target user
+  ansible.builtin.include_tasks: git_config.yml
+  when:
+    - dev.git.enabled | default(false) | bool
+    - dev.git.configure_global | default(false) | bool
+
+# Ubuntu ships these two binaries under alternate names to avoid clashes with
+# unrelated packages, which breaks every tutorial and dotfile that calls them
+# `fd` and `bat`.
+- name: Look for the renamed fd and bat binaries
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop:
+    - /usr/bin/fdfind
+    - /usr/bin/batcat
+  register: renamed_binaries
+
+- name: Link fd and bat to their conventional names
+  ansible.builtin.file:
+    src: "{{ item.stat.path }}"
+    dest: "/usr/local/bin/{{ 'fd' if item.stat.path.endswith('fdfind') else 'bat' }}"
+    state: link
+    force: true
+  loop: "{{ renamed_binaries.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.stat.exists
+
+- name: Check whether the docker group exists
+  ansible.builtin.command:
+    cmd: getent group docker
+  register: docker_group_check
+  changed_when: false
   failed_when: false
-  when:
-    - dev.desktop is defined
-    - dev.desktop.enabled | bool
-    - dev.desktop.packages | length > 0
 
-- name: Report unsupported desktop packages
-  ansible.builtin.debug:
-    msg: "Desktop package failed to install and may be unavailable on this distro: {{ item.item }}"
-  loop: "{{ desktop_pkg_install.results | default([]) }}"
+- name: Add the target user to the docker group
+  ansible.builtin.user:
+    name: "{{ setup_target_user }}"
+    groups: docker
+    append: true
   when:
-    - item.failed | default(false)
+    - dev.containers.enabled | default(false) | bool
+    - dev.containers.add_user_to_docker_group | default(false) | bool
+    - docker_group_check.rc == 0
+
+- name: Ensure the docker service is running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+  failed_when: false
+  when: dev.containers.enabled | default(false) | bool

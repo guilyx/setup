@@ -9,18 +9,71 @@ This project uses Ansible for idempotent provisioning, with:
 - environment-specific YAML config
 - a small web app to quickly compose setup configs and launch commands
 
+## Install on a fresh Ubuntu machine
+
+One command. No clone, no prerequisites beyond `curl` and a sudo-capable user:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/guilyx/setup/main/install.sh | bash
+```
+
+It installs git/python/uv, clones this repo to `~/.local/share/setup`, installs
+the Ansible collections, and provisions the machine from `config/defaults.yaml`.
+
+Preview without changing anything:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/guilyx/setup/main/install.sh | bash -s -- --check
+```
+
+Other flags: `--config PATH`, `--ref BRANCH`, `--dir PATH`, `--print-only`.
+Each has an environment variable equivalent (`SETUP_CONFIG`, `SETUP_REF`,
+`SETUP_DIR`), which is how you pass them when piping into `bash`:
+
+```bash
+curl -fsSL .../install.sh | SETUP_REF=my-branch bash
+```
+
 ## Developer tooling included
 
-- Shell: `zsh` + `oh-my-zsh` (no Vim setup included)
-- Productivity: `tmux`, `fzf`, `zoxide`, `bat`, `direnv`
-- Git/Collaboration: `gh`, `git-lfs`, PR template, CODEOWNERS
-- Quality: `pre-commit`, `shellcheck`, `yamllint`
-- Containers: `docker.io`, `docker-compose-v2`
-- Desktop bars/launchers: `polybar`, `rofi`, `picom`, `feh`, `dunst`, `waybar` (best-effort)
+- Shell: `zsh` + `oh-my-zsh` with autosuggestions, syntax highlighting and completions, plus the `starship` prompt
+- Productivity: `tmux`, `fzf`, `zoxide`, `bat`, `eza`, `ripgrep`, `fd`, `jq`, `yq`, `htop`, `btop`, `tree`, `ncdu`, `duf`, `httpie`, `tldr`, `direnv`, `xclip`
+- Languages: Python (`pipx`, `virtualenv`, `pre-commit`), Node, Rust via `rustup` (opt-in Go)
+- Git/Collaboration: `gh`, `git-lfs`, `tig`, opinionated global git config, PR template, CODEOWNERS
+- Quality: `pre-commit`, `shellcheck`, `shfmt`, `yamllint`
+- Containers: `docker.io`, `docker-compose-v2`, with your user added to the `docker` group
+- Desktop bars/launchers: `polybar`, `rofi`, `picom`, `feh`, `dunst`, `waybar` (opt-in)
+
+Package installation is resilient: a group is installed in one transaction, and
+if a name does not exist on your Ubuntu release the group is retried
+package-by-package so the rest still lands.
 
 See `docs/dev-tooling-catalog.md` and `docs/review-policy.md`.
 
-Dotfiles support auto-discovery of stow folders from the source repo root (with configurable excludes).
+## Dotfiles with chezmoi
+
+Dotfiles are managed by [chezmoi](https://www.chezmoi.io) by default, from
+[`guilyx/chezmoi`](https://github.com/guilyx/chezmoi). The `chezmoi` role:
+
+- installs the `chezmoi` binary
+- writes `~/.config/chezmoi/chezmoi.toml` from `chezmoi.data` in your config, so
+  `chezmoi init` never stops to prompt during provisioning
+- runs `chezmoi init --apply` on first run and `chezmoi update` on later runs
+
+Day to day:
+
+```bash
+chezmoi edit ~/.zshrc   # edit the source
+chezmoi diff            # preview
+chezmoi apply -v        # apply
+chezmoi update -v       # pull and apply
+```
+
+The older GNU stow workflow is still available: set `dotfiles.manager: stow`.
+The two managers are mutually exclusive — whichever one is selected owns the
+home directory, and the other role skips itself.
+
+See `docs/chezmoi-guide.md`.
 
 ## Documentation
 
@@ -40,7 +93,9 @@ Dotfiles support auto-discovery of stow folders from the source repo root (with 
 - **Auditable**: declarative config + Ansible logs.
 - **Safe defaults**: dry-run capable and explicit inventory.
 
-## Quick start
+## Quick start (working on this repo)
+
+If you cloned the repository yourself rather than using the curl entrypoint:
 
 1) Install dependencies:
 
@@ -70,6 +125,7 @@ cp inventory/vps.example.ini inventory/vps.ini
 
 ## Components
 
+- `install.sh` - curl-able entrypoint for a fresh machine
 - `playbooks/dev.yml` - local machine setup
 - `playbooks/vps.yml` - VPS setup
 - `roles/*` - granular provisioning logic

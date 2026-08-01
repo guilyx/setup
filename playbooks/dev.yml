@@ -3,10 +3,40 @@
   hosts: localhost
   connection: local
   become: true
+  vars:
+    # The apt module needs python3-apt, which lives in the system interpreter's
+    # site-packages, not in this project's virtualenv.
+    ansible_python_interpreter: /usr/bin/python3
   vars_files:
     - ../config/defaults.yaml
+  pre_tasks:
+    - name: Resolve the unprivileged user this machine is being set up for
+      ansible.builtin.set_fact:
+        setup_target_user: >-
+          {{
+            (dev.shell.user | default('') | trim)
+            or (lookup('env', 'SUDO_USER') | default('', true) | trim)
+            or (lookup('env', 'USER') | default('', true) | trim)
+          }}
+
+    - name: Fail when no target user could be resolved
+      ansible.builtin.fail:
+        msg: >-
+          Unable to resolve a target user. Set `dev.shell.user` in your config
+          or run through sudo so SUDO_USER is populated.
+      when: (setup_target_user | trim) in ['', 'root']
+
+    - name: Look up the target user account
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ setup_target_user }}"
+
+    - name: Record the target user home directory
+      ansible.builtin.set_fact:
+        setup_target_home: "{{ getent_passwd[setup_target_user][4] }}"
   roles:
     - role: common
     - role: dev_shell
     - role: dev
+    - role: chezmoi
     - role: dotfiles

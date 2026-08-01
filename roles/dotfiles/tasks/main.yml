@@ -1,7 +1,11 @@
 ---
-- name: Skip dotfiles role when disabled
+# This role is the GNU stow path. When `dotfiles.manager` is chezmoi the
+# chezmoi role owns the home directory instead.
+- name: Skip dotfiles role when disabled or not the active manager
   ansible.builtin.meta: end_role
-  when: not dotfiles.enabled | bool
+  when:
+    - not dotfiles.enabled | bool
+      or (dotfiles.manager | default('stow')) != 'stow'
 
 - name: Ensure GNU stow is installed
   ansible.builtin.package:
@@ -14,12 +18,12 @@
       {{
         (dotfiles.local_path | default('') | trim)
         if (dotfiles.local_path | default('') | trim) != ''
-        else (dotfiles.destination | expanduser)
+        else (dotfiles.destination | regex_replace('^~', setup_target_home))
       }}
 
 - name: Validate local dotfiles source path
   ansible.builtin.stat:
-    path: "{{ dotfiles_source_dir | expanduser }}"
+    path: "{{ dotfiles_source_dir }}"
   register: dotfiles_source_stat
   when: (dotfiles.local_path | default('') | trim) != ''
 
@@ -31,16 +35,17 @@
     - not dotfiles_source_stat.stat.exists
 
 - name: Clone dotfiles repository when local path is not provided
-  become: false
+  become: true
+  become_user: "{{ setup_target_user }}"
   ansible.builtin.git:
     repo: "{{ dotfiles.repo_url }}"
-    dest: "{{ dotfiles.destination | expanduser }}"
+    dest: "{{ dotfiles.destination | regex_replace('^~', setup_target_home) }}"
     update: true
   when: (dotfiles.local_path | default('') | trim) == ''
 
 - name: Discover top-level dotfiles folders for stow
   ansible.builtin.find:
-    paths: "{{ dotfiles_source_dir | expanduser }}"
+    paths: "{{ dotfiles_source_dir }}"
     file_type: directory
     recurse: false
   register: dotfiles_discovered_dirs
@@ -67,8 +72,9 @@
   when: (dotfiles_effective_stow_folders | length) == 0
 
 - name: Stow effective folders
-  become: false
+  become: true
+  become_user: "{{ setup_target_user }}"
   ansible.builtin.command:
-    cmd: "stow -d {{ dotfiles_source_dir | expanduser }} -t {{ ansible_env.HOME }} {{ item }}"
+    cmd: "stow -d {{ dotfiles_source_dir }} -t {{ setup_target_home }} {{ item }}"
   loop: "{{ dotfiles_effective_stow_folders }}"
   changed_when: false

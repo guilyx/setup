@@ -4,6 +4,8 @@ This folder contains end-to-end documentation for the setup platform.
 
 ## Start Here
 
+- [Install Entrypoint](./install-entrypoint.md)
+- [Dotfiles with chezmoi](./chezmoi-guide.md)
 - [Architecture](./architecture.md)
 - [Provisioning Flows](./provisioning-flows.md)
 - [Configuration Reference](./configuration-reference.md)

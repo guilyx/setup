@@ -4,13 +4,21 @@ common:
   locale: "en_US.UTF-8"
   base_packages:
     - curl
+    - wget
     - git
     - unzip
+    - zip
     - ca-certificates
+    - gnupg
+    - software-properties-common
+    - apt-transport-https
 
+# Dotfiles are managed by chezmoi by default.
+# Set `manager: stow` to fall back to the GNU stow workflow.
 dotfiles:
   enabled: true
-  local_path: "/home/wardn/dev/made_after_dark/dotfiles"
+  manager: "chezmoi"
+  local_path: ""
   repo_url: "https://github.com/guilyx/dotfiles.git"
   destination: "~/.dotfiles"
   auto_discover_stow_folders: true
@@ -21,30 +29,24 @@ dotfiles:
     - zsh
     - starship
     - fzf
-    - fd
-    - ripgrep
-    - bat
     - tmux
     - git
-    - quality
-    - pyright
-    - ruff
-    - black
-    - shellcheck
-    - shfmt
-    - yamllint
-    - ansible
-    - polybar
-    - picom
-    - rofi
-    - feh
-    - dunst
-    - waybar
-    - docker
-    - lazydocker
-    - k9s
     - direnv
-    - gitleaks
+
+chezmoi:
+  enabled: true
+  user: ""
+  repo_url: "https://github.com/guilyx/chezmoi.git"
+  install_dir: "/usr/local/bin"
+  apply: true
+  update: true
+  # Values exposed to chezmoi templates via ~/.config/chezmoi/chezmoi.toml.
+  data:
+    name: "Erwin Lejeune"
+    email: "erwin.lejeune15@gmail.com"
+    editor: "nvim"
+    signing_key: ""
+    work_machine: false
 
 dev:
   enabled: true
@@ -52,17 +54,37 @@ dev:
   packages:
     - build-essential
     - make
+    - cmake
+    - pkg-config
     - jq
+    - yq
     - ripgrep
     - fd-find
     - tmux
     - fzf
     - zoxide
     - bat
+    - eza
+    - htop
+    - btop
+    - tree
+    - ncdu
+    - duf
+    - httpie
+    - net-tools
+    - dnsutils
+    - rsync
+    - tldr
+    - neofetch
     - direnv
+    - xclip
+    - unzip
   python:
     enabled: true
     packages:
+      - python3
+      - python3-pip
+      - python3-venv
       - pipx
       - virtualenv
       - pre-commit
@@ -71,11 +93,23 @@ dev:
     packages:
       - nodejs
       - npm
+  rust:
+    enabled: true
+    # Installed through rustup so toolchains stay user-owned and updatable.
+    channel: "stable"
+    components:
+      - rustfmt
+      - clippy
+  go:
+    enabled: false
+    packages:
+      - golang-go
   shell:
     enabled: true
     user: ""
     packages:
       - zsh
+      - fonts-powerline
     oh_my_zsh:
       enabled: true
       repo_url: "https://github.com/ohmyzsh/ohmyzsh.git"
@@ -87,24 +121,52 @@ dev:
         - npm
         - python
         - ubuntu
+        - direnv
+        - fzf
+        - zoxide
       theme: "robbyrussell"
+      custom_plugins:
+        - name: "zsh-autosuggestions"
+          repo_url: "https://github.com/zsh-users/zsh-autosuggestions.git"
+        - name: "zsh-syntax-highlighting"
+          repo_url: "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+        - name: "zsh-completions"
+          repo_url: "https://github.com/zsh-users/zsh-completions.git"
+    starship:
+      enabled: true
   git:
     enabled: true
     packages:
       - git-lfs
       - gh
+      - tig
+    # Global git ergonomics applied to the target user.
+    configure_global: true
+    user_name: ""
+    user_email: ""
+    default_branch: "main"
+    pull_rebase: true
+    editor: "nvim"
+  editor:
+    enabled: true
+    packages:
+      - neovim
+    default: "nvim"
   quality:
     enabled: true
     packages:
       - shellcheck
+      - shfmt
       - yamllint
   containers:
     enabled: true
     packages:
       - docker.io
       - docker-compose-v2
+    # Adds the target user to the docker group so `sudo` is not needed.
+    add_user_to_docker_group: true
   desktop:
-    enabled: true
+    enabled: false
     packages:
       - polybar
       - rofi

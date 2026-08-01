@@ -11,6 +11,6 @@ fi
 cd "${ROOT_DIR}"
 uv sync --extra dev
 
-ansible-galaxy collection install -r "${ROOT_DIR}/requirements.yml"
+uv run ansible-galaxy collection install -r "${ROOT_DIR}/requirements.yml"
 
 echo "Bootstrap complete."
