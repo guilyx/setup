@@ -1,0 +1,66 @@
+---
+- name: Install Claude Code for the target user
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.shell:
+    cmd: curl -fsSL https://claude.ai/install.sh | bash
+    creates: "{{ setup_target_home }}/.local/bin/claude"
+  when: dev.ai_tools.claude_code.enabled | default(false) | bool
+
+# Cursor ships as an AppImage. AppImages need FUSE 2, which Ubuntu stopped
+# installing by default at 22.04.
+- name: Install Cursor
+  when: dev.ai_tools.cursor.enabled | default(false) | bool
+  block:
+    - name: Ensure AppImage runtime support is present
+      ansible.builtin.package:
+        name: libfuse2
+        state: present
+      failed_when: false
+
+    - name: Ensure the Cursor install directory exists
+      ansible.builtin.file:
+        path: "{{ dev.ai_tools.cursor.install_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download the Cursor AppImage
+      ansible.builtin.get_url:
+        url: "{{ dev.ai_tools.cursor.download_url }}"
+        dest: "{{ dev.ai_tools.cursor.install_dir }}/cursor.AppImage"
+        mode: "0755"
+      register: cursor_download
+      failed_when: false
+
+    - name: Report a failed Cursor download
+      ansible.builtin.debug:
+        msg: >-
+          Cursor could not be downloaded from {{ dev.ai_tools.cursor.download_url }};
+          skipping. Install it manually or update dev.ai_tools.cursor.download_url.
+      when: cursor_download is failed
+
+    - name: Link Cursor onto PATH
+      ansible.builtin.file:
+        src: "{{ dev.ai_tools.cursor.install_dir }}/cursor.AppImage"
+        dest: /usr/local/bin/cursor
+        state: link
+        force: true
+      when: cursor_download is not failed
+
+    - name: Create the Cursor desktop entry
+      ansible.builtin.copy:
+        dest: /usr/share/applications/cursor.desktop
+        mode: "0644"
+        content: |
+          [Desktop Entry]
+          Name=Cursor
+          Comment=AI-first code editor
+          Exec={{ dev.ai_tools.cursor.install_dir }}/cursor.AppImage --no-sandbox %F
+          Icon=cursor
+          Type=Application
+          Categories=Development;IDE;
+          StartupWMClass=Cursor
+          MimeType=text/plain;inode/directory;
+      when:
+        - cursor_download is not failed
+        - dev.ai_tools.cursor.desktop_entry | default(true) | bool

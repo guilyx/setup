@@ -53,7 +53,10 @@ both to their conventional names in `/usr/local/bin`.
 ## Languages
 
 - Python: `python3`, `pip`, `venv`, `pipx`, `virtualenv`, `pre-commit`
-- Node: `nodejs`, `npm`
+- Node: installed from NodeSource at `dev.node.version_major` (default 22),
+  with corepack enabled for pnpm and yarn. Not from apt — Ubuntu ships Node 18,
+  and its separate `npm` package conflicts with NodeSource's bundled one, so
+  the role removes it first. See [Machine Setup and the App Ecosystem](./ecosystem-handoff.md).
 - Rust: installed through `rustup` under the target user's account, with
   `rustfmt` and `clippy`. Toolchains stay user-owned and updatable without root.
 - Go: opt-in (`dev.go.enabled`)
@@ -71,6 +74,23 @@ both to their conventional names in `/usr/local/bin`.
 ## Editor
 
 - `neovim`, with `dev.editor.default` exported as `$EDITOR`.
+
+## AI Coding Tools
+
+`dev.ai_tools`, on by default.
+
+- **Claude Code** — installed via the official installer into the target user's
+  `~/.local/bin/claude`, so it stays user-owned and self-updating. Authenticate
+  once with `claude` on first run.
+- **Cursor** — the Linux AppImage, placed in `dev.ai_tools.cursor.install_dir`
+  (default `/opt/cursor`), symlinked to `/usr/local/bin/cursor`, with a desktop
+  entry. `libfuse2` is installed alongside it, since AppImages need FUSE 2 and
+  Ubuntu stopped shipping it by default at 22.04.
+
+Cursor is a GUI application and is pointless on a headless box — set
+`dev.ai_tools.cursor.enabled: false` there. Its download is best-effort: if the
+URL changes upstream, provisioning reports it and carries on rather than
+failing the run.
 
 ## Quality and Validation
 

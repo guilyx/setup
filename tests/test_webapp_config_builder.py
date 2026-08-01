@@ -54,6 +54,7 @@ def test_generated_dev_section_matches_the_keys_roles_read() -> None:
         "node",
         "rust",
         "go",
+        "ai_tools",
         "shell",
         "git",
         "editor",
@@ -63,3 +64,20 @@ def test_generated_dev_section_matches_the_keys_roles_read() -> None:
         "docs_and_reviews",
     }
     assert expected.issubset(cfg["dev"].keys())
+
+
+def test_generated_node_config_matches_the_nodesource_role() -> None:
+    node_cfg = build_config_from_form({})["dev"]["node"]
+
+    assert node_cfg["version_major"] == 22
+    assert "packages" not in node_cfg
+
+
+def test_generated_apps_handoff_is_off_unless_asked_for() -> None:
+    cfg = build_config_from_form({})
+    assert cfg["apps"]["enabled"] is False
+    assert cfg["apps"]["start_stacks"] is False
+
+    opted_in = build_config_from_form({"apps_enabled": "on", "apps_run_bootstrap": "on"})
+    assert opted_in["apps"]["enabled"] is True
+    assert opted_in["apps"]["run_bootstrap"] is True

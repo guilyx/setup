@@ -1,0 +1,85 @@
+---
+# Optional: hand off to the chezmoi repo's app orchestration once the machine
+# itself is provisioned. This role deliberately does not reimplement any of it
+# — it clones that repo and calls its scripts, so the ecosystem stays defined
+# in one place.
+- name: Skip apps role when disabled
+  ansible.builtin.meta: end_role
+  when: apps is not defined or not apps.enabled | bool
+
+- name: Resolve the apps checkout path
+  ansible.builtin.set_fact:
+    apps_repo_dir: "{{ apps.destination | regex_replace('^~', setup_target_home) }}"
+
+- name: Clone the ecosystem repository
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.git:
+    repo: "{{ apps.repo_url }}"
+    dest: "{{ apps_repo_dir }}"
+    version: "{{ apps.version | default('main') }}"
+    # Bracket syntax: apps.update would resolve to dict.update, the method.
+    update: "{{ apps['update'] | default(true) | bool }}"
+
+- name: Check for the canonical env file
+  ansible.builtin.stat:
+    path: "{{ apps_repo_dir }}/.env"
+  register: apps_env_state
+
+# The ecosystem needs secrets that cannot come from this repo. Seeding the
+# template makes the next step obvious instead of failing cryptically.
+- name: Seed the canonical env file from the example
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.copy:
+    src: "{{ apps_repo_dir }}/.env.example"
+    dest: "{{ apps_repo_dir }}/.env"
+    remote_src: true
+    mode: "0600"
+    force: false
+  when: not apps_env_state.stat.exists
+
+- name: Verify the machine can run the apps
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: bash scripts/00-preflight.sh
+    chdir: "{{ apps_repo_dir }}"
+  register: apps_preflight
+  changed_when: false
+  failed_when: false
+
+- name: Report the preflight outcome
+  ansible.builtin.debug:
+    msg: "{{ apps_preflight.stdout_lines | default([]) + apps_preflight.stderr_lines | default([]) }}"
+
+- name: Clone and configure the ecosystem repositories
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: ./bootstrap.sh --no-up
+    chdir: "{{ apps_repo_dir }}"
+  register: apps_bootstrap
+  changed_when: apps_bootstrap.rc == 0
+  when:
+    - apps.run_bootstrap | default(false) | bool
+    - apps_preflight.rc == 0
+
+- name: Start the app stacks
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: make up
+    chdir: "{{ apps_repo_dir }}"
+  register: apps_up
+  changed_when: apps_up.rc == 0
+  when:
+    - apps.start_stacks | default(false) | bool
+    - apps_preflight.rc == 0
+
+- name: Explain what to do next
+  ansible.builtin.debug:
+    msg:
+      - "Ecosystem repo is at {{ apps_repo_dir }}."
+      - "Fill in secrets in {{ apps_repo_dir }}/.env, then run: make configure && make up"
+      - "Health check: make doctor    Dashboard: make dashboard"

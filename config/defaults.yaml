@@ -79,6 +79,11 @@ dev:
     - direnv
     - xclip
     - unzip
+    # Needed by the app ecosystem: ffmpeg for clankergram's reel processing,
+    # sqlite3 for LeClanker's memory store.
+    - ffmpeg
+    - sqlite3
+    - openssl
   python:
     enabled: true
     packages:
@@ -90,9 +95,20 @@ dev:
       - pre-commit
   node:
     enabled: true
-    packages:
-      - nodejs
-      - npm
+    # From NodeSource, not apt: Ubuntu ships Node 18 and the ecosystem apps
+    # need >= 22.
+    version_major: 22
+    enable_corepack: true
+    global_packages: []
+  ai_tools:
+    enabled: true
+    claude_code:
+      enabled: true
+    cursor:
+      enabled: true
+      download_url: "https://downloader.cursor.sh/linux/appImage/x64"
+      install_dir: "/opt/cursor"
+      desktop_entry: true
   rust:
     enabled: true
     # Installed through rustup so toolchains stay user-owned and updatable.
@@ -176,6 +192,17 @@ dev:
       - waybar
   docs_and_reviews:
     enabled: true
+
+# Optional hand-off to the app ecosystem defined in the chezmoi repo. Off by
+# default: bringing the stacks up needs secrets that only you can supply.
+apps:
+  enabled: false
+  repo_url: "https://github.com/guilyx/chezmoi.git"
+  destination: "~/apps/chezmoi"
+  version: "main"
+  update: true
+  run_bootstrap: false
+  start_stacks: false
 
 vps:
   enabled: true

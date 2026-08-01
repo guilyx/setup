@@ -64,6 +64,42 @@ def test_quality_of_life_tooling_is_present() -> None:
     assert cfg["dev"]["git"]["configure_global"] is True
 
 
+def test_node_comes_from_nodesource_at_the_version_the_apps_need() -> None:
+    """Ubuntu's Node is 18; the ecosystem apps need >= 22, and mixing the
+    distro npm package with NodeSource's nodejs breaks dpkg."""
+    node_cfg = load_defaults()["dev"]["node"]
+
+    assert node_cfg["version_major"] >= 22
+    assert "packages" not in node_cfg, "apt package list would reintroduce the conflict"
+
+
+def test_ai_coding_tools_are_configured() -> None:
+    ai_tools = load_defaults()["dev"]["ai_tools"]
+
+    assert ai_tools["enabled"] is True
+    assert ai_tools["claude_code"]["enabled"] is True
+    assert ai_tools["cursor"]["enabled"] is True
+    assert ai_tools["cursor"]["download_url"].startswith("https://")
+
+
+def test_ecosystem_packages_the_apps_depend_on_are_present() -> None:
+    """These moved here when the chezmoi repo stopped provisioning machines."""
+    packages = set(load_defaults()["dev"]["packages"])
+
+    for expected in ("ffmpeg", "sqlite3", "openssl"):
+        assert expected in packages, f"{expected} missing from dev.packages"
+
+
+def test_apps_handoff_is_opt_in() -> None:
+    """Starting the stacks needs secrets, so it must never happen by default."""
+    apps = load_defaults()["apps"]
+
+    assert apps["enabled"] is False
+    assert apps["run_bootstrap"] is False
+    assert apps["start_stacks"] is False
+    assert apps["repo_url"].endswith("chezmoi.git")
+
+
 def test_vps_defaults_include_ssh_authorized_keys_list() -> None:
     cfg = load_defaults()
     assert "ssh_authorized_keys" in cfg["vps"]

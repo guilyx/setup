@@ -40,3 +40,4 @@
     - role: dev
     - role: chezmoi
     - role: dotfiles
+    - role: apps
