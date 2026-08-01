@@ -16,11 +16,8 @@
     pkg_list: "{{ dev.python.packages | default([]) }}"
   when: dev.python.enabled | default(false) | bool
 
-- name: Install Node tooling packages
-  ansible.builtin.include_tasks: install_packages.yml
-  vars:
-    pkg_group_name: Node tooling
-    pkg_list: "{{ dev.node.packages | default([]) }}"
+- name: Configure the Node toolchain
+  ansible.builtin.include_tasks: node.yml
   when: dev.node.enabled | default(false) | bool
 
 - name: Install Go tooling packages
@@ -68,6 +65,10 @@
 - name: Configure Rust toolchain
   ansible.builtin.include_tasks: rust.yml
   when: dev.rust.enabled | default(false) | bool
+
+- name: Install AI coding tools
+  ansible.builtin.include_tasks: ai_tools.yml
+  when: dev.ai_tools.enabled | default(false) | bool
 
 - name: Configure Git for the target user
   ansible.builtin.include_tasks: git_config.yml

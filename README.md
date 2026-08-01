@@ -38,7 +38,8 @@ curl -fsSL .../install.sh | SETUP_REF=my-branch bash
 
 - Shell: `zsh` + `oh-my-zsh` with autosuggestions, syntax highlighting and completions, plus the `starship` prompt
 - Productivity: `tmux`, `fzf`, `zoxide`, `bat`, `eza`, `ripgrep`, `fd`, `jq`, `yq`, `htop`, `btop`, `tree`, `ncdu`, `duf`, `httpie`, `tldr`, `direnv`, `xclip`
-- Languages: Python (`pipx`, `virtualenv`, `pre-commit`), Node, Rust via `rustup` (opt-in Go)
+- Languages: Python (`pipx`, `virtualenv`, `pre-commit`), Node 22 from NodeSource with corepack, Rust via `rustup` (opt-in Go)
+- AI coding tools: Claude Code and Cursor
 - Git/Collaboration: `gh`, `git-lfs`, `tig`, opinionated global git config, PR template, CODEOWNERS
 - Quality: `pre-commit`, `shellcheck`, `shfmt`, `yamllint`
 - Containers: `docker.io`, `docker-compose-v2`, with your user added to the `docker` group
@@ -74,6 +75,22 @@ The two managers are mutually exclusive — whichever one is selected owns the
 home directory, and the other role skips itself.
 
 See `docs/chezmoi-guide.md`.
+
+## The app ecosystem
+
+This repo provisions the machine. The apps themselves — what runs, on which
+port, started how — live in [`guilyx/chezmoi`](https://github.com/guilyx/chezmoi).
+Provision first, then bring the apps up:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/guilyx/setup/main/install.sh | bash
+exec zsh                     # docker group applies to new sessions only
+cd ~/apps/chezmoi && make configure && make up
+```
+
+Setting `apps.enabled: true` makes this repo do the clone and configure step
+for you during provisioning. Starting the stacks stays opt-in, since it needs
+secrets. See `docs/ecosystem-handoff.md`.
 
 ## Documentation
 

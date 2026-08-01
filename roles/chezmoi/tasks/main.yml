@@ -63,4 +63,7 @@
   changed_when: "'Already up to date' not in chezmoi_update_result.stdout"
   when:
     - chezmoi_source_state.stat.exists
-    - chezmoi.update | default(true) | bool
+    # Bracket syntax, not chezmoi.update: dotted access finds the dict's
+    # built-in update() method instead of the config key, which is always
+    # truthy as an object and always False through `| bool`.
+    - chezmoi['update'] | default(true) | bool

@@ -230,6 +230,19 @@
               <label>Git user name <input name="dev_git_user_name" type="text" value=""></label>
               <label>Git user email <input name="dev_git_user_email" type="text" value=""></label>
               <label><input name="dev_desktop_enabled" type="checkbox"> Desktop bars and launchers</label>
+              <label>Node major version (NodeSource) <input name="dev_node_version_major" type="text" value="22"></label>
+              <label><input name="dev_ai_tools_enabled" type="checkbox" checked> AI coding tools</label>
+              <label><input name="dev_claude_code_enabled" type="checkbox" checked> Claude Code</label>
+              <label><input name="dev_cursor_enabled" type="checkbox" checked> Cursor (needs a desktop session)</label>
+            </fieldset>
+
+            <fieldset>
+              <legend>App Ecosystem (optional)</legend>
+              <label><input name="apps_enabled" type="checkbox"> Deploy the app ecosystem</label>
+              <label>Ecosystem repo <input name="apps_repo_url" type="text" value="https://github.com/guilyx/chezmoi.git"></label>
+              <label>Checkout path <input name="apps_destination" type="text" value="~/apps/chezmoi"></label>
+              <label><input name="apps_run_bootstrap" type="checkbox"> Clone and configure the apps</label>
+              <label><input name="apps_start_stacks" type="checkbox"> Start the stacks (needs secrets in .env first)</label>
             </fieldset>
 
             <fieldset>

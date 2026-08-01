@@ -79,7 +79,14 @@ or provisioning stops to ask. See [Dotfiles with chezmoi](./chezmoi-guide.md).
 | `python.enabled` | bool | `true` | toggle Python toolchain |
 | `python.packages` | list[string] | `["pipx","virtualenv"]` | Python packages |
 | `node.enabled` | bool | `true` | toggle Node toolchain |
-| `node.packages` | list[string] | `["nodejs","npm"]` | Node packages |
+| `node.version_major` | int | `22` | Node major version, installed from NodeSource |
+| `node.enable_corepack` | bool | `true` | enable corepack for pnpm/yarn |
+| `node.global_packages` | list[string] | `[]` | global npm packages |
+| `ai_tools.enabled` | bool | `true` | toggle AI coding tools |
+| `ai_tools.claude_code.enabled` | bool | `true` | install Claude Code |
+| `ai_tools.cursor.enabled` | bool | `true` | install the Cursor AppImage |
+| `ai_tools.cursor.download_url` | string | official AppImage URL | override if upstream moves |
+| `ai_tools.cursor.install_dir` | string | `/opt/cursor` | AppImage location |
 | `rust.enabled` | bool | `true` | install Rust via rustup as the target user |
 | `rust.channel` | string | `stable` | rustup default toolchain |
 | `rust.components` | list[string] | `["rustfmt","clippy"]` | rustup components |
@@ -92,6 +99,20 @@ or provisioning stops to ask. See [Dotfiles with chezmoi](./chezmoi-guide.md).
 | `editor.default` | string | `nvim` | exported as `$EDITOR` |
 | `containers.add_user_to_docker_group` | bool | `true` | docker without sudo |
 | `desktop.enabled` | bool | `false` | bars and launchers; off for headless boxes |
+
+## `apps`
+
+Optional hand-off to the app ecosystem in the chezmoi repo. See
+[Machine Setup and the App Ecosystem](./ecosystem-handoff.md).
+
+| Key | Type | Example | Purpose |
+|---|---|---|---|
+| `enabled` | bool | `false` | toggle the apps role |
+| `repo_url` | string | `https://github.com/guilyx/chezmoi.git` | ecosystem repo |
+| `destination` | string | `~/apps/chezmoi` | checkout path |
+| `version` | string | `main` | branch or tag |
+| `run_bootstrap` | bool | `false` | clone the app repos and write their env files |
+| `start_stacks` | bool | `false` | `make up`; needs secrets in `.env` first |
 
 ## `vps`
 

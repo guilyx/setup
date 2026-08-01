@@ -86,7 +86,23 @@ def build_config_from_form(form: Dict[str, str]) -> Dict[str, Any]:
             },
             "node": {
                 "enabled": to_bool(form.get("dev_node_enabled", "true")),
-                "packages": split_csv(form.get("dev_node_packages", "nodejs,npm")),
+                "version_major": int(form.get("dev_node_version_major", "22")),
+                "enable_corepack": to_bool(form.get("dev_node_enable_corepack", "true")),
+                "global_packages": split_csv(form.get("dev_node_global_packages", "")),
+            },
+            "ai_tools": {
+                "enabled": to_bool(form.get("dev_ai_tools_enabled", "true")),
+                "claude_code": {
+                    "enabled": to_bool(form.get("dev_claude_code_enabled", "true")),
+                },
+                "cursor": {
+                    "enabled": to_bool(form.get("dev_cursor_enabled", "true")),
+                    "download_url": form.get(
+                        "dev_cursor_download_url", "https://downloader.cursor.sh/linux/appImage/x64"
+                    ),
+                    "install_dir": form.get("dev_cursor_install_dir", "/opt/cursor"),
+                    "desktop_entry": to_bool(form.get("dev_cursor_desktop_entry", "true")),
+                },
             },
             "rust": {
                 "enabled": to_bool(form.get("dev_rust_enabled", "true")),
@@ -140,6 +156,15 @@ def build_config_from_form(form: Dict[str, str]) -> Dict[str, Any]:
                 "packages": split_csv(form.get("dev_desktop_packages", "polybar,rofi,picom,feh,dunst,waybar")),
             },
             "docs_and_reviews": {"enabled": True},
+        },
+        "apps": {
+            "enabled": to_bool(form.get("apps_enabled", "false")),
+            "repo_url": form.get("apps_repo_url", "https://github.com/guilyx/chezmoi.git"),
+            "destination": form.get("apps_destination", "~/apps/chezmoi"),
+            "version": form.get("apps_version", "main"),
+            "update": to_bool(form.get("apps_update", "true")),
+            "run_bootstrap": to_bool(form.get("apps_run_bootstrap", "false")),
+            "start_stacks": to_bool(form.get("apps_start_stacks", "false")),
         },
         "vps": {
             "enabled": True,
