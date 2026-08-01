@@ -1,4 +1,4 @@
-.PHONY: bootstrap test dev vps web
+.PHONY: bootstrap test dev dev-check vps web
 
 bootstrap:
 	./scripts/bootstrap.sh
@@ -8,6 +8,9 @@ test:
 
 dev:
 	./scripts/run-dev.sh --config config/defaults.yaml
+
+dev-check:
+	./scripts/run-dev.sh --config config/defaults.yaml --check
 
 vps:
 	./scripts/run-vps.sh --config config/defaults.yaml --inventory inventory/vps.example.ini --print-only

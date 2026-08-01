@@ -6,44 +6,63 @@
 
 - name: Install shell packages
   ansible.builtin.package:
-    name: "{{ dev.shell.packages }}"
+    name: "{{ item }}"
     state: present
+  loop: "{{ dev.shell.packages }}"
+  ignore_errors: true
   when: dev.shell.packages | length > 0
 
-- name: Resolve shell target user
-  ansible.builtin.set_fact:
-    dev_shell_target_user: >-
-      {{
-        dev.shell.user
-        if (dev.shell.user | default('') | trim) != ''
-        else (lookup('env', 'SUDO_USER') | default(lookup('env', 'USER'), true))
-      }}
-
-- name: Ensure shell target user exists
-  ansible.builtin.command:
-    cmd: "id {{ dev_shell_target_user }}"
-  changed_when: false
-
-- name: Ensure default shell is zsh for target user
+- name: Ensure default shell is zsh for the target user
   ansible.builtin.user:
-    name: "{{ dev_shell_target_user }}"
+    name: "{{ setup_target_user }}"
     shell: /usr/bin/zsh
 
+# Under chezmoi, ~/.oh-my-zsh and its plugins come from the dotfiles repo's
+# .chezmoiexternal.toml. Cloning them here as well would leave two things
+# managing one directory, and chezmoi's `exact` externals would win the
+# argument by deleting whatever it did not put there.
 - name: Clone Oh My Zsh
   become: true
-  become_user: "{{ dev_shell_target_user }}"
+  become_user: "{{ setup_target_user }}"
   ansible.builtin.git:
     repo: "{{ dev.shell.oh_my_zsh.repo_url }}"
-    dest: "~/.oh-my-zsh"
+    dest: "{{ setup_target_home }}/.oh-my-zsh"
     version: "{{ dev.shell.oh_my_zsh.branch }}"
     update: true
   when:
     - dev.shell.oh_my_zsh.enabled | bool
+    - (dotfiles.manager | default('stow')) != 'chezmoi'
 
+- name: Clone Oh My Zsh custom plugins
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.git:
+    repo: "{{ item.repo_url }}"
+    dest: "{{ setup_target_home }}/.oh-my-zsh/custom/plugins/{{ item.name }}"
+    depth: 1
+    version: "{{ item.version | default('master') }}"
+    update: true
+  loop: "{{ dev.shell.oh_my_zsh.custom_plugins | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when:
+    - dev.shell.oh_my_zsh.enabled | bool
+    - (dotfiles.manager | default('stow')) != 'chezmoi'
+
+- name: Install starship prompt
+  ansible.builtin.shell:
+    cmd: "curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir /usr/local/bin"
+    creates: /usr/local/bin/starship
+  when: dev.shell.starship.enabled | default(false) | bool
+
+# chezmoi owns ~/.zshrc when it is the active dotfiles manager, so this
+# template must not fight it for the same file.
 - name: Render zsh configuration
   become: true
-  become_user: "{{ dev_shell_target_user }}"
+  become_user: "{{ setup_target_user }}"
   ansible.builtin.template:
     src: zshrc.j2
-    dest: "~/.zshrc"
+    dest: "{{ setup_target_home }}/.zshrc"
     mode: "0644"
+    backup: true
+  when: (dotfiles.manager | default('stow')) != 'chezmoi'

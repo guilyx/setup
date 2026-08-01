@@ -1,0 +1,24 @@
+---
+- name: Check for an existing rustup installation
+  ansible.builtin.stat:
+    path: "{{ setup_target_home }}/.cargo/bin/rustup"
+  register: rustup_state
+
+- name: Install rustup for the target user
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      curl --proto '=https' --tlsv1.2 -fsSL https://sh.rustup.rs
+      | sh -s -- -y --no-modify-path --default-toolchain {{ dev.rust.channel }}
+    creates: "{{ setup_target_home }}/.cargo/bin/rustup"
+  when: not rustup_state.stat.exists
+
+- name: Install rustup components
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: "{{ setup_target_home }}/.cargo/bin/rustup component add {{ item }}"
+  loop: "{{ dev.rust.components | default([]) }}"
+  register: rustup_component_result
+  changed_when: "'is up to date' not in rustup_component_result.stderr"

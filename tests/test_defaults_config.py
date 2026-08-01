@@ -17,6 +17,28 @@ def test_dotfiles_autodiscovery_defaults() -> None:
     assert "ansible" in dotfiles["exclude_stow_folders"]
 
 
+def test_chezmoi_is_the_default_dotfiles_manager() -> None:
+    cfg = load_defaults()
+
+    assert cfg["dotfiles"]["manager"] == "chezmoi"
+    assert cfg["chezmoi"]["enabled"] is True
+    assert cfg["chezmoi"]["repo_url"].endswith(".git")
+    assert cfg["chezmoi"]["apply"] is True
+
+
+def test_chezmoi_template_data_covers_repo_prompts() -> None:
+    """Every prompt in the dotfiles repo must have a non-interactive answer."""
+    data = load_defaults()["chezmoi"]["data"]
+
+    for key in ("name", "email", "editor", "signing_key", "work_machine"):
+        assert key in data, f"chezmoi.data is missing {key}"
+
+
+def test_stow_local_path_is_not_hardcoded_to_a_foreign_home() -> None:
+    cfg = load_defaults()
+    assert cfg["dotfiles"]["local_path"] == ""
+
+
 def test_shell_is_oh_my_zsh_only() -> None:
     cfg = load_defaults()
     shell_cfg = cfg["dev"]["shell"]
@@ -28,6 +50,18 @@ def test_shell_is_oh_my_zsh_only() -> None:
     configured_packages = set(cfg["dev"]["packages"])
     assert "nvim" not in configured_packages
     assert "vim" not in configured_packages
+
+
+def test_quality_of_life_tooling_is_present() -> None:
+    cfg = load_defaults()
+    packages = set(cfg["dev"]["packages"])
+
+    for expected in ("ripgrep", "fzf", "zoxide", "bat", "htop", "tmux", "direnv"):
+        assert expected in packages, f"{expected} missing from dev.packages"
+
+    assert cfg["dev"]["shell"]["starship"]["enabled"] is True
+    assert cfg["dev"]["containers"]["add_user_to_docker_group"] is True
+    assert cfg["dev"]["git"]["configure_global"] is True
 
 
 def test_vps_defaults_include_ssh_authorized_keys_list() -> None:

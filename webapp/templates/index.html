@@ -174,9 +174,27 @@
             </fieldset>
 
             <fieldset>
-              <legend>Dotfiles</legend>
+              <legend>Dotfiles (chezmoi)</legend>
+              <label><input name="chezmoi_enabled" type="checkbox" checked> Manage dotfiles with chezmoi</label>
+              <label>chezmoi repo <input name="chezmoi_repo_url" type="text" value="https://github.com/guilyx/chezmoi.git"></label>
+              <label>Full name (template data) <input name="chezmoi_data_name" type="text" value=""></label>
+              <label>Email (template data) <input name="chezmoi_data_email" type="text" value=""></label>
+              <label>Editor (template data) <input name="chezmoi_data_editor" type="text" value="nvim"></label>
+              <label>Git signing key (blank for none) <input name="chezmoi_data_signing_key" type="text" value=""></label>
+              <label><input name="chezmoi_data_work_machine" type="checkbox"> Work machine</label>
+              <label><input name="chezmoi_update" type="checkbox" checked> Pull latest on every run</label>
+            </fieldset>
+
+            <fieldset>
+              <legend>Dotfiles (GNU stow fallback)</legend>
+              <label>Manager
+                <select name="dotfiles_manager">
+                  <option value="chezmoi" selected>chezmoi</option>
+                  <option value="stow">stow</option>
+                </select>
+              </label>
               <label><input name="dotfiles_enabled" type="checkbox" checked> Enable dotfiles</label>
-              <label>Local path <input name="dotfiles_local_path" type="text" value="/home/wardn/dev/made_after_dark/dotfiles"></label>
+              <label>Local path <input name="dotfiles_local_path" type="text" value=""></label>
               <label>Repo URL fallback <input name="dotfiles_repo_url" type="text" value="https://github.com/guilyx/dotfiles.git"></label>
               <label>Destination <input name="dotfiles_destination" type="text" value="~/.dotfiles"></label>
               <label><input name="dotfiles_auto_discover_stow_folders" type="checkbox" checked> Auto-discover stow folders</label>
@@ -191,12 +209,27 @@
             <fieldset>
               <legend>Dev Machine</legend>
               <label>Dev packages
-                <input name="dev_packages" type="text" value="build-essential,make,jq,ripgrep,fd-find,tmux,fzf,zoxide,bat,direnv">
+                <input name="dev_packages" type="text" value="build-essential,make,cmake,pkg-config,jq,yq,ripgrep,fd-find,tmux,fzf,zoxide,bat,eza,htop,btop,tree,ncdu,duf,httpie,net-tools,dnsutils,rsync,tldr,neofetch,direnv,xclip,unzip">
               </label>
               <label><input name="dev_python_enabled" type="checkbox" checked> Python toolchain</label>
-              <label>Python packages <input name="dev_python_packages" type="text" value="pipx,virtualenv,pre-commit"></label>
+              <label>Python packages <input name="dev_python_packages" type="text" value="python3,python3-pip,python3-venv,pipx,virtualenv,pre-commit"></label>
               <label><input name="dev_node_enabled" type="checkbox" checked> Node toolchain</label>
               <label>Node packages <input name="dev_node_packages" type="text" value="nodejs,npm"></label>
+              <label><input name="dev_rust_enabled" type="checkbox" checked> Rust toolchain (rustup)</label>
+              <label>Rust components <input name="dev_rust_components" type="text" value="rustfmt,clippy"></label>
+              <label><input name="dev_go_enabled" type="checkbox"> Go toolchain</label>
+              <label><input name="dev_editor_enabled" type="checkbox" checked> Editor</label>
+              <label>Editor packages <input name="dev_editor_packages" type="text" value="neovim"></label>
+              <label><input name="dev_shell_starship_enabled" type="checkbox" checked> Starship prompt</label>
+              <label>Zsh plugins <input name="dev_shell_plugins" type="text" value="git,docker,docker-compose,npm,python,ubuntu,direnv,fzf,zoxide"></label>
+              <label><input name="dev_quality_enabled" type="checkbox" checked> Quality tooling</label>
+              <label>Quality packages <input name="dev_quality_packages" type="text" value="shellcheck,shfmt,yamllint"></label>
+              <label><input name="dev_containers_enabled" type="checkbox" checked> Containers</label>
+              <label><input name="dev_containers_add_user_to_docker_group" type="checkbox" checked> Add user to docker group</label>
+              <label><input name="dev_git_configure_global" type="checkbox" checked> Apply global git settings</label>
+              <label>Git user name <input name="dev_git_user_name" type="text" value=""></label>
+              <label>Git user email <input name="dev_git_user_email" type="text" value=""></label>
+              <label><input name="dev_desktop_enabled" type="checkbox"> Desktop bars and launchers</label>
             </fieldset>
 
             <fieldset>

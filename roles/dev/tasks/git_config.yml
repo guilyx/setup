@@ -1,0 +1,23 @@
+---
+# Only settings with a value are written, so an existing ~/.gitconfig (or one
+# managed by chezmoi) keeps whatever it already declares.
+- name: Apply global git settings for the target user
+  become: true
+  become_user: "{{ setup_target_user }}"
+  community.general.git_config:
+    name: "{{ item.name }}"
+    scope: global
+    value: "{{ item.value }}"
+  loop:
+    - {name: user.name, value: "{{ dev.git.user_name | default('') }}"}
+    - {name: user.email, value: "{{ dev.git.user_email | default('') }}"}
+    - {name: init.defaultBranch, value: "{{ dev.git.default_branch | default('') }}"}
+    - {name: core.editor, value: "{{ dev.git.editor | default('') }}"}
+    - {name: pull.rebase, value: "{{ 'true' if dev.git.pull_rebase | default(false) | bool else '' }}"}
+    - {name: push.autoSetupRemote, value: "true"}
+    - {name: rebase.autoStash, value: "true"}
+    - {name: diff.colorMoved, value: "default"}
+    - {name: fetch.prune, value: "true"}
+  loop_control:
+    label: "{{ item.name }}"
+  when: (item.value | trim) != ''

@@ -18,6 +18,18 @@ from tooling.setup_cli import build_ansible_command
 
 GENERATED_CONFIG_PATH = REPO_ROOT / "config" / "web-generated.yaml"
 
+DEFAULT_DEV_PACKAGES = (
+    "build-essential,make,cmake,pkg-config,jq,yq,ripgrep,fd-find,tmux,fzf,zoxide,"
+    "bat,eza,htop,btop,tree,ncdu,duf,httpie,net-tools,dnsutils,rsync,tldr,"
+    "neofetch,direnv,xclip,unzip"
+)
+DEFAULT_ZSH_PLUGINS = "git,docker,docker-compose,npm,python,ubuntu,direnv,fzf,zoxide"
+CUSTOM_ZSH_PLUGINS = [
+    {"name": "zsh-autosuggestions", "repo_url": "https://github.com/zsh-users/zsh-autosuggestions.git"},
+    {"name": "zsh-syntax-highlighting", "repo_url": "https://github.com/zsh-users/zsh-syntax-highlighting.git"},
+    {"name": "zsh-completions", "repo_url": "https://github.com/zsh-users/zsh-completions.git"},
+]
+
 app = Flask(__name__, template_folder="templates")
 
 
@@ -42,24 +54,92 @@ def build_config_from_form(form: Dict[str, str]) -> Dict[str, Any]:
         },
         "dotfiles": {
             "enabled": to_bool(form.get("dotfiles_enabled", "true")),
-            "local_path": form.get("dotfiles_local_path", "/home/wardn/dev/made_after_dark/dotfiles"),
+            "manager": form.get("dotfiles_manager", "chezmoi"),
+            "local_path": form.get("dotfiles_local_path", ""),
             "repo_url": form.get("dotfiles_repo_url", "https://github.com/guilyx/dotfiles.git"),
             "destination": form.get("dotfiles_destination", "~/.dotfiles"),
             "auto_discover_stow_folders": to_bool(form.get("dotfiles_auto_discover_stow_folders", "true")),
             "exclude_stow_folders": split_csv(form.get("dotfiles_exclude_stow_folders", ".git,ansible")),
             "stow_folders": split_csv(form.get("stow_folders", "")),
         },
+        "chezmoi": {
+            "enabled": to_bool(form.get("chezmoi_enabled", "true")),
+            "user": form.get("chezmoi_user", ""),
+            "repo_url": form.get("chezmoi_repo_url", "https://github.com/guilyx/chezmoi.git"),
+            "install_dir": form.get("chezmoi_install_dir", "/usr/local/bin"),
+            "apply": to_bool(form.get("chezmoi_apply", "true")),
+            "update": to_bool(form.get("chezmoi_update", "true")),
+            "data": {
+                "name": form.get("chezmoi_data_name", ""),
+                "email": form.get("chezmoi_data_email", ""),
+                "editor": form.get("chezmoi_data_editor", "nvim"),
+                "signing_key": form.get("chezmoi_data_signing_key", ""),
+                "work_machine": to_bool(form.get("chezmoi_data_work_machine", "false")),
+            },
+        },
         "dev": {
             "enabled": True,
-            "packages": split_csv(form.get("dev_packages", "build-essential,make,jq,ripgrep,fd-find,tmux,fzf,zoxide,bat,direnv")),
+            "packages": split_csv(form.get("dev_packages", DEFAULT_DEV_PACKAGES)),
             "python": {
                 "enabled": to_bool(form.get("dev_python_enabled", "true")),
-                "packages": split_csv(form.get("dev_python_packages", "pipx,virtualenv,pre-commit")),
+                "packages": split_csv(form.get("dev_python_packages", "python3,python3-pip,python3-venv,pipx,virtualenv,pre-commit")),
             },
             "node": {
                 "enabled": to_bool(form.get("dev_node_enabled", "true")),
                 "packages": split_csv(form.get("dev_node_packages", "nodejs,npm")),
             },
+            "rust": {
+                "enabled": to_bool(form.get("dev_rust_enabled", "true")),
+                "channel": form.get("dev_rust_channel", "stable"),
+                "components": split_csv(form.get("dev_rust_components", "rustfmt,clippy")),
+            },
+            "go": {
+                "enabled": to_bool(form.get("dev_go_enabled", "false")),
+                "packages": split_csv(form.get("dev_go_packages", "golang-go")),
+            },
+            "shell": {
+                "enabled": to_bool(form.get("dev_shell_enabled", "true")),
+                "user": form.get("dev_shell_user", ""),
+                "packages": split_csv(form.get("dev_shell_packages", "zsh,fonts-powerline")),
+                "oh_my_zsh": {
+                    "enabled": to_bool(form.get("dev_shell_oh_my_zsh_enabled", "true")),
+                    "repo_url": "https://github.com/ohmyzsh/ohmyzsh.git",
+                    "branch": "master",
+                    "plugins": split_csv(form.get("dev_shell_plugins", DEFAULT_ZSH_PLUGINS)),
+                    "theme": form.get("dev_shell_theme", "robbyrussell"),
+                    "custom_plugins": CUSTOM_ZSH_PLUGINS,
+                },
+                "starship": {"enabled": to_bool(form.get("dev_shell_starship_enabled", "true"))},
+            },
+            "git": {
+                "enabled": to_bool(form.get("dev_git_enabled", "true")),
+                "packages": split_csv(form.get("dev_git_packages", "git-lfs,gh,tig")),
+                "configure_global": to_bool(form.get("dev_git_configure_global", "true")),
+                "user_name": form.get("dev_git_user_name", ""),
+                "user_email": form.get("dev_git_user_email", ""),
+                "default_branch": form.get("dev_git_default_branch", "main"),
+                "pull_rebase": to_bool(form.get("dev_git_pull_rebase", "true")),
+                "editor": form.get("dev_git_editor", "nvim"),
+            },
+            "editor": {
+                "enabled": to_bool(form.get("dev_editor_enabled", "true")),
+                "packages": split_csv(form.get("dev_editor_packages", "neovim")),
+                "default": form.get("dev_editor_default", "nvim"),
+            },
+            "quality": {
+                "enabled": to_bool(form.get("dev_quality_enabled", "true")),
+                "packages": split_csv(form.get("dev_quality_packages", "shellcheck,shfmt,yamllint")),
+            },
+            "containers": {
+                "enabled": to_bool(form.get("dev_containers_enabled", "true")),
+                "packages": split_csv(form.get("dev_containers_packages", "docker.io,docker-compose-v2")),
+                "add_user_to_docker_group": to_bool(form.get("dev_containers_add_user_to_docker_group", "true")),
+            },
+            "desktop": {
+                "enabled": to_bool(form.get("dev_desktop_enabled", "false")),
+                "packages": split_csv(form.get("dev_desktop_packages", "polybar,rofi,picom,feh,dunst,waybar")),
+            },
+            "docs_and_reviews": {"enabled": True},
         },
         "vps": {
             "enabled": True,

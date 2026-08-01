@@ -1,4 +1,7 @@
 .venv/
+.ansible/
+config/local.yaml
+config/web-generated.yaml
 __pycache__/
 *.pyc
 .pytest_cache/

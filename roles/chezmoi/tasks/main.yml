@@ -1,0 +1,66 @@
+---
+- name: Skip chezmoi role when disabled
+  ansible.builtin.meta: end_role
+  when:
+    - chezmoi is not defined
+      or not chezmoi.enabled | bool
+      or (dotfiles.manager | default('chezmoi')) != 'chezmoi'
+
+- name: Resolve the chezmoi target user
+  ansible.builtin.set_fact:
+    chezmoi_user: "{{ chezmoi.user | default('') | trim or setup_target_user }}"
+
+- name: Resolve the chezmoi target home directory
+  ansible.builtin.set_fact:
+    chezmoi_home: >-
+      {{ setup_target_home if chezmoi_user == setup_target_user
+         else '/home/' ~ chezmoi_user }}
+
+- name: Install the chezmoi binary
+  ansible.builtin.shell:
+    cmd: 'sh -c "$(curl -fsLS get.chezmoi.io)" -- -b {{ chezmoi.install_dir }}'
+    creates: "{{ chezmoi.install_dir }}/chezmoi"
+
+- name: Ensure the chezmoi config directory exists
+  ansible.builtin.file:
+    path: "{{ chezmoi_home }}/.config/chezmoi"
+    state: directory
+    owner: "{{ chezmoi_user }}"
+    mode: "0755"
+
+# These values feed the `.chezmoi.toml.tmpl` prompts in the dotfiles repo, so
+# `chezmoi init` never blocks on interactive input during provisioning.
+- name: Write the chezmoi template data file
+  ansible.builtin.template:
+    src: chezmoi.toml.j2
+    dest: "{{ chezmoi_home }}/.config/chezmoi/chezmoi.toml"
+    owner: "{{ chezmoi_user }}"
+    mode: "0600"
+
+- name: Check for an initialized chezmoi source directory
+  ansible.builtin.stat:
+    path: "{{ chezmoi_home }}/.local/share/chezmoi/.git"
+  register: chezmoi_source_state
+
+- name: Initialize dotfiles from the chezmoi repository
+  become: true
+  become_user: "{{ chezmoi_user }}"
+  ansible.builtin.command:
+    cmd: >-
+      {{ chezmoi.install_dir }}/chezmoi init --no-tty
+      {{ '--apply' if chezmoi.apply | default(true) | bool else '' }}
+      {{ chezmoi.repo_url }}
+  when: not chezmoi_source_state.stat.exists
+
+- name: Pull and apply the latest dotfiles
+  become: true
+  become_user: "{{ chezmoi_user }}"
+  ansible.builtin.command:
+    cmd: "{{ chezmoi.install_dir }}/chezmoi update --no-tty"
+  register: chezmoi_update_result
+  # `chezmoi update` shells out to git pull, whose output is the only signal
+  # available about whether anything actually moved.
+  changed_when: "'Already up to date' not in chezmoi_update_result.stdout"
+  when:
+    - chezmoi_source_state.stat.exists
+    - chezmoi.update | default(true) | bool
