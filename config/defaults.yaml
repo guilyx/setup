@@ -204,6 +204,21 @@ apps:
   run_bootstrap: false
   start_stacks: false
 
+# Optional local LLM serving harness (vLLM on GPU rigs, Ollama on Jetson/CPU;
+# one OpenAI-compatible gateway URL either way). Off by default: serving pulls
+# multi-GB model weights. The role clones the repo and calls its own scripts.
+leharness:
+  enabled: false
+  repo_url: "https://github.com/guilyx/LeHarness.git"
+  destination: "~/apps/LeHarness"
+  version: "main"
+  update: true
+  # Wire the NVIDIA container toolkit into docker when a GPU is present but
+  # the runtime is missing (no-op on GPU-less machines).
+  install_gpu_runtime: true
+  # Start serving during provisioning (downloads model weights immediately).
+  start: false
+
 vps:
   enabled: true
   create_deploy_user: true

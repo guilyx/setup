@@ -18,6 +18,8 @@ common:
 dotfiles:
 chezmoi:
 dev:
+apps:
+leharness:
 vps:
 ```
 
@@ -113,6 +115,25 @@ Optional hand-off to the app ecosystem in the chezmoi repo. See
 | `version` | string | `main` | branch or tag |
 | `run_bootstrap` | bool | `false` | clone the app repos and write their env files |
 | `start_stacks` | bool | `false` | `make up`; needs secrets in `.env` first |
+
+## `leharness`
+
+Optional local LLM serving harness ([guilyx/LeHarness](https://github.com/guilyx/LeHarness)):
+detects the hardware tier (multi-GPU / single-GPU / Jetson / CPU), serves via
+vLLM or Ollama accordingly, and exposes one OpenAI-compatible gateway URL.
+The role clones the repo and calls its own scripts — detection and engine
+logic stay defined there. See
+[Machine Setup and the App Ecosystem](./ecosystem-handoff.md).
+
+| Key | Type | Example | Purpose |
+|---|---|---|---|
+| `enabled` | bool | `false` | toggle the leharness role |
+| `repo_url` | string | `https://github.com/guilyx/LeHarness.git` | harness repo |
+| `destination` | string | `~/apps/LeHarness` | checkout path |
+| `version` | string | `main` | branch or tag |
+| `update` | bool | `true` | pull on re-provisioning |
+| `install_gpu_runtime` | bool | `true` | wire nvidia-container-toolkit into docker when a GPU needs it |
+| `start` | bool | `false` | `leharness up` during provisioning (downloads model weights) |
 
 ## `vps`
 
