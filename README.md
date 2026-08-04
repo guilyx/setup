@@ -92,6 +92,18 @@ Setting `apps.enabled: true` makes this repo do the clone and configure step
 for you during provisioning. Starting the stacks stays opt-in, since it needs
 secrets. See `docs/ecosystem-handoff.md`.
 
+## Local LLM serving (LeHarness)
+
+Set `leharness.enabled: true` to also install
+[`guilyx/LeHarness`](https://github.com/guilyx/LeHarness) — the harness that
+detects the machine's hardware tier (DGX-class multi-GPU, single-GPU
+workstation, Jetson AGX Orin, or CPU-only), serves local models through vLLM
+or Ollama accordingly, and exposes one OpenAI-compatible endpoint
+(`http://127.0.0.1:8000/v1`). The role clones the repo, verifies the GPU
+container runtime (installing `nvidia-container-toolkit` when needed), and
+reports the detected profile; actually starting the engine
+(`leharness.start: true`) stays opt-in because it downloads model weights.
+
 ## Documentation
 
 - Full docs index: `docs/README.md`

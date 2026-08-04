@@ -41,3 +41,4 @@
     - role: chezmoi
     - role: dotfiles
     - role: apps
+    - role: leharness

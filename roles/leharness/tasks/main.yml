@@ -1,0 +1,80 @@
+---
+# Optional: put LeHarness (the local LLM serving harness for LeClanker,
+# https://github.com/guilyx/LeHarness) on this machine. Like the apps role,
+# this deliberately reimplements nothing — it clones the repo and calls its
+# own scripts, so hardware detection and engine selection stay defined there.
+- name: Skip leharness role when disabled
+  ansible.builtin.meta: end_role
+  when: leharness is not defined or not leharness.enabled | bool
+
+- name: Resolve the LeHarness checkout path
+  ansible.builtin.set_fact:
+    leharness_repo_dir: "{{ leharness.destination | regex_replace('^~', setup_target_home) }}"
+
+- name: Clone the LeHarness repository
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.git:
+    repo: "{{ leharness.repo_url }}"
+    dest: "{{ leharness_repo_dir }}"
+    version: "{{ leharness.version | default('main') }}"
+    # Bracket syntax: leharness.update would resolve to dict.update, the method.
+    update: "{{ leharness['update'] | default(true) | bool }}"
+
+- name: Verify LeHarness prerequisites (docker, GPU container runtime)
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: bash scripts/install.sh
+    chdir: "{{ leharness_repo_dir }}"
+  register: leharness_install
+  changed_when: false
+  failed_when: false
+
+# The one machine-level gap LeHarness can have that this repo should close:
+# the NVIDIA container toolkit. install.sh --fix installs and wires it into
+# docker; it is a no-op on machines without an NVIDIA GPU.
+- name: Fix the GPU container runtime (nvidia-container-toolkit)
+  ansible.builtin.command:
+    cmd: bash scripts/install.sh --fix
+    chdir: "{{ leharness_repo_dir }}"
+  register: leharness_fix
+  changed_when: leharness_fix.rc == 0
+  failed_when: false
+  when:
+    - leharness.install_gpu_runtime | default(true) | bool
+    - leharness_install.rc != 0
+
+- name: Detect the hardware tier
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: python3 scripts/detect_hardware.py
+    chdir: "{{ leharness_repo_dir }}"
+  register: leharness_detect
+  changed_when: false
+  failed_when: false
+
+- name: Report the detected profile
+  ansible.builtin.debug:
+    msg: "{{ leharness_detect.stdout | default('detection failed') }}"
+
+# Serving is opt-in: it pulls multi-GB model weights and pins GPU memory,
+# which a provisioning run should not silently commit the machine to.
+- name: Start the LeHarness stack
+  become: true
+  become_user: "{{ setup_target_user }}"
+  ansible.builtin.command:
+    cmd: bash scripts/up.sh
+    chdir: "{{ leharness_repo_dir }}"
+  register: leharness_up
+  changed_when: leharness_up.rc == 0
+  when: leharness.start | default(false) | bool
+
+- name: Explain what to do next
+  ansible.builtin.debug:
+    msg:
+      - "LeHarness is at {{ leharness_repo_dir }}."
+      - "Tune models/profile in {{ leharness_repo_dir }}/leharness.yaml (optional — full auto works)."
+      - "Serve: make -C {{ leharness_repo_dir }} up    Health: make -C {{ leharness_repo_dir }} doctor"
+      - "Clients use the gateway: http://127.0.0.1:8000/v1 (model 'chat')."

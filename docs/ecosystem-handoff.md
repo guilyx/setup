@@ -52,6 +52,29 @@ stacks needs real secrets in `~/apps/chezmoi/.env`, which provisioning cannot
 supply. The role seeds that file from `.env.example` and tells you what to
 edit.
 
+## Local models: the LeHarness role
+
+[`guilyx/LeHarness`](https://github.com/guilyx/LeHarness) is the third piece:
+it serves local LLMs on whatever hardware the machine has (vLLM with tensor
+parallelism on GPU rigs, Ollama with GGUF quantization on Jetson/CPU) behind
+one OpenAI-compatible URL. The split of responsibilities:
+
+| Repo | LeHarness-related job |
+|---|---|
+| `setup` (this one) | clone LeHarness, make docker GPU-capable (`nvidia-container-toolkit`), report the detected tier |
+| `LeHarness` | detect hardware, pick engine + parallelism, run the containers, expose the gateway |
+| `chezmoi` | clone/configure/start/monitor it alongside the other apps (`make up ONLY=leharness`, `make doctor`, dashboard card) |
+
+```yaml
+leharness:
+  enabled: true
+  install_gpu_runtime: true   # no-op without an NVIDIA GPU
+  start: false                # keep off during provisioning: pulls model weights
+```
+
+Like the `apps` role, it reimplements nothing — hardware detection and engine
+selection live in the LeHarness repo, and this role calls its scripts.
+
 ## Why Node comes from NodeSource
 
 Ubuntu 24.04 ships Node 18; the ecosystem apps need 22 or newer. Ubuntu also
